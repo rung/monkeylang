@@ -14,7 +14,7 @@ const (
 	IDENT = "IDENT" // add, foobar, x, y, ...
 	INT = "INT" //1,2,3,4
 
-	ASSIGN = "+"
+	ASSIGN = "="
 	PLUS = "+"
 
 	COMMA = ","
@@ -29,5 +29,6 @@ const (
 	FUNCTION = "FUNCTION"
 	LET = "LET"
 )
+
 
 
