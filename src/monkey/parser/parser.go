@@ -38,6 +38,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.MINUS, p.parsePrefixExpression)
 	p.registerPrefix(token.TRUE, p.parseBoolean)
 	p.registerPrefix(token.FALSE, p.parseBoolean)
+	p.registerPrefix(token.LPAREN, p.parseGroupedExpression)
 
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
 	p.registerInfix(token.PLUS, p.parseInfixExpression)
@@ -186,7 +187,7 @@ const (
 	LESSGREATER // > or <
 	SUM         // +
 	PRODUCT     // *
-	PREFIX      // -x or !X
+	PREFIX      //precedences -x or !X
 	CALL        // myFunction(X)
 )
 
@@ -292,4 +293,26 @@ func (p *Parser) parseInfixExpression(left ast.Expression) ast.Expression {
 // booelan
 func (p *Parser) parseBoolean() ast.Expression {
 	return &ast.Boolean{Token: p.curToken, Value: p.curTokenIs(token.TRUE)}
+}
+
+//Gruped
+// e.g. ( or )
+//  How it works: (が来たら、precedenceをLOWESTにしてparseを流す。
+// 例: 2 * (3 + 5)となっているとき、*の結合力は強いが、(が来ることによってLOWESTになる。そのため、+より結合度が
+// 弱いことになり、(3 + 5) と+側にくっつく。
+// また、")"までたどり着いたときに、")"のprecedenceもLOWEST(peekPrecedence())なので、parseExpresiionでreturnされる.
+// )の処理については、下記関数でp.expectPeekを呼び出すことによりtokenを1すすめる。
+// 例 5 + 2 * ((3 + 5) * 2) のようにネストしていてもちゃんと動く。
+// 最初の"("が処理されたあと、再帰呼出しされたparseExpressionに2個目の"(〜)"が処理されるので、
+// 最初の"("を呼び出した関数は２個目の"(〜)"を処理せず、最後の")"にたどり着く
+func (p *Parser) parseGroupedExpression() ast.Expression {
+	p.nextToken()
+
+	exp := p.parseExpression(LOWEST)
+
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+
+	return exp
 }
