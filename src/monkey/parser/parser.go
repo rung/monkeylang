@@ -83,7 +83,7 @@ func (p *Parser) Errors() []string {
 }
 
 func (p *Parser) peekError(t token.TokenType) {
-	msg := fmt.Sprintf("expected next token to be %s, got %s insted",
+	msg := fmt.Sprintf("expected next token to be %s, got %s instead",
 		t, p.peekToken.Type)
 	p.errors = append(p.errors, msg)
 }
@@ -342,12 +342,19 @@ func (p *Parser) parseIfExpression() ast.Expression {
 	}
 
 	expression.Consequence = p.parseBlockStatement()
+	//curToken: }
 
-	if !p.expectPeek(token.RBRACE) {
-		return nil
+	// else
+	if p.peekTokenIs(token.ELSE) {
+		p.nextToken()
+
+		// {
+		if !p.expectPeek(token.LBRACE) {
+			return nil
+		}
+
+		expression.Alternative = p.parseBlockStatement()
 	}
-
-	// TODO: else未実装
 
 	return expression
 
