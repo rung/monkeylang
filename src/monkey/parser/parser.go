@@ -51,6 +51,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.NOT_EQ, p.parseInfixExpression)
 	p.registerInfix(token.LT, p.parseInfixExpression)
 	p.registerInfix(token.GT, p.parseInfixExpression)
+	p.registerInfix(token.LPAREN, p.parserCallExpression)
 
 	return p
 }
@@ -202,6 +203,7 @@ var precedences = map[token.TokenType]int{
 	token.MINUS:    SUM,
 	token.SLASH:    PRODUCT,
 	token.ASTERISK: PRODUCT,
+	token.LPAREN:   CALL,
 }
 
 func (p *Parser) noPrefixParseFnError(t token.TokenType) {
@@ -436,4 +438,45 @@ func (p *Parser) parseFunctionParameters() []*ast.Identifier {
 	}
 
 	return identifies
+}
+
+// CallExpression
+//  <expression>(<comma separated expressions>)
+//
+//  token.LPAREN"(" のinfixExpressionとして登録する
+//  先に左側の<expression>は普通にparseしておいて、(がきたら関数として扱う。
+//  関数の結合度は一番強いので、"("の優先度は一番高い
+func (p *Parser) parserCallExpression(function ast.Expression) ast.Expression {
+	exp := &ast.CallExpression{Token: p.curToken, Function: function}
+	exp.Arguments = p.parseCallArguments()
+	return exp
+
+}
+
+func (p *Parser) parseCallArguments() []ast.Expression {
+	args := []ast.Expression{}
+
+	// add()
+	if p.peekTokenIs(token.RPAREN) {
+		p.nextToken()
+		return args
+	}
+
+	// curToken is x
+	p.nextToken()
+	args = append(args, p.parseExpression(LOWEST))
+
+	for p.peekTokenIs(token.COMMA) {
+		p.nextToken()
+		// curToken is ,
+		p.nextToken()
+		args = append(args, p.parseExpression(LOWEST))
+		//,か)がpeekTokenに来ると戻ってくる
+	}
+
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+
+	return args
 }
