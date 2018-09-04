@@ -40,6 +40,7 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.FALSE, p.parseBoolean)
 	p.registerPrefix(token.LPAREN, p.parseGroupedExpression)
 	p.registerPrefix(token.IF, p.parseIfExpression)
+	p.registerPrefix(token.FUNCTION, p.parseFunctionLiteral)
 
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
 	p.registerInfix(token.PLUS, p.parseInfixExpression)
@@ -216,6 +217,7 @@ func (p *Parser) parseExpression(precedence int) ast.Expression {
 	}
 	leftExp := prefix()
 
+	// Memo: SEMICOLON（文の終端）だった場合はtokenが進められる
 	for !p.peekTokenIs(token.SEMICOLON) && precedence < p.peekPrecedence() {
 		infix := p.infixParseFns[p.peekToken.Type]
 		if infix == nil {
@@ -360,6 +362,7 @@ func (p *Parser) parseIfExpression() ast.Expression {
 
 }
 
+// parseBlockStatement is used by IfExpression and FunctionExpression
 func (p *Parser) parseBlockStatement() *ast.BlockStatement {
 	block := &ast.BlockStatement{Token: p.curToken}
 	block.Statements = []ast.Statement{}
@@ -376,4 +379,61 @@ func (p *Parser) parseBlockStatement() *ast.BlockStatement {
 	}
 
 	return block
+}
+
+// function
+//  e.g. fn(x, y){x + y;}
+func (p *Parser) parseFunctionLiteral() ast.Expression {
+	lit := &ast.FunctionLiteral{Token: p.curToken}
+
+	if !p.expectPeek(token.LPAREN) {
+		return nil
+	}
+	//(x, y)
+	lit.Parameters = p.parseFunctionParameters()
+
+	// {
+	if !p.expectPeek(token.LBRACE) {
+		return nil
+	}
+
+	// x + y;
+	lit.Body = p.parseBlockStatement()
+	// parseBlockStatementは"}"の位置までトークンをすすめる.
+	// 戻るときのcurTokenは一個手前まででよい(呼び出しもとがトークンをすすめる)のでtokenをここで進める必要はない
+
+	return lit
+}
+
+// When this function is called, curToken is "(".
+func (p *Parser) parseFunctionParameters() []*ast.Identifier {
+	identifies := []*ast.Identifier{}
+
+	// fn()パターン
+	if p.peekTokenIs(token.RPAREN) {
+		p.nextToken()
+		return identifies
+	}
+
+	// curToken is "x"
+	p.nextToken()
+
+	ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+	identifies = append(identifies, ident)
+
+	for p.peekTokenIs(token.COMMA) {
+		p.nextToken()
+		// curToken is ","
+		p.nextToken()
+		// curToken is "y"
+		ident := &ast.Identifier{Token: p.curToken, Value: p.curToken.Literal}
+		identifies = append(identifies, ident)
+	}
+
+	// )
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+
+	return identifies
 }
