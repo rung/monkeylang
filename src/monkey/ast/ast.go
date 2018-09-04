@@ -46,9 +46,9 @@ func (p *Program) String() string {
 
 // Let
 type LetStatement struct {
-	Token token.Token
-	Name  *Identifier
-	Value Expression
+	Token token.Token // Token, Literalはlet
+	Name  *Identifier // Token=Ident, Value=変数名
+	Value Expression  // 式
 }
 
 func (ls *LetStatement) statementNode()       {}
@@ -71,7 +71,7 @@ func (ls *LetStatement) String() string {
 
 type Identifier struct {
 	Token token.Token // token.IDENT
-	Value string
+	Value string      //変数名
 }
 
 func (i *Identifier) expressionNode()      {}
