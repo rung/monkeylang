@@ -86,6 +86,7 @@ func TestBangOperator(t *testing.T) {
 		{"!false", true},
 		{"!5", false},
 		{"!!true", true},
+		//Memo: !!trueは構文解析すると(!(!true))となる。
 		{"!!false", false},
 		{"!!5", true},
 	}
