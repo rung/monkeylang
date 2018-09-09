@@ -103,6 +103,7 @@ func evalInfixExpression(operator string, left, right object.Object) object.Obje
 	case operator == "==":
 		// TRUEとFALSEは同じポインタを使いまわす設計になっているので単純な比較をしている
 		// 下はobject.Objectはポインタの比較をしている.
+		// leftとrightがintegerのときは、evalIntegerInfixExpressionの中で数値そのものを比較している
 		return nativeBooleanObject(left == right)
 	case operator == "!=":
 		return nativeBooleanObject(left != right)
