@@ -100,6 +100,12 @@ func evalInfixExpression(operator string, left, right object.Object) object.Obje
 	switch {
 	case left.Type() == object.INTEGER_OBJ && right.Type() == object.INTEGER_OBJ:
 		return evalIntegerInfixExpression(operator, left, right)
+	case operator == "==":
+		// TRUEとFALSEは同じポインタを使いまわす設計になっているので単純な比較をしている
+		// 下はobject.Objectはポインタの比較をしている.
+		return nativeBooleanObject(left == right)
+	case operator == "!=":
+		return nativeBooleanObject(left != right)
 	default:
 		return NULL
 	}
