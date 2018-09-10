@@ -15,32 +15,32 @@ var (
 	NULL  = &object.Null{}
 )
 
-func Eval(node ast.Node) object.Object {
+func Eval(node ast.Node, env *object.Environment) object.Object {
 	switch node := node.(type) {
 
 	case *ast.InfixExpression:
-		left := Eval(node.Left)
+		left := Eval(node.Left, env)
 		if isError(left) {
 			return left
 		}
-		right := Eval(node.Right)
+		right := Eval(node.Right, env)
 		if isError(right) {
 			return right
 		}
 		return evalInfixExpression(node.Operator, left, right)
 
 	case *ast.PrefixExpression:
-		right := Eval(node.Right)
+		right := Eval(node.Right, env)
 		if isError(right) {
 			return right
 		}
 		return evalPrefixExpression(node.Operator, right)
 
 	case *ast.Program:
-		return evalProgram(node.Statements)
+		return evalProgram(node.Statements, env)
 
 	case *ast.ExpressionStatement:
-		return Eval(node.Expression)
+		return Eval(node.Expression, env)
 
 	case *ast.IntegerLiteral:
 		return &object.Integer{Value: node.Value}
@@ -49,13 +49,13 @@ func Eval(node ast.Node) object.Object {
 		return nativeBooleanObject(node.Value)
 
 	case *ast.BlockStatement:
-		return evalBlockStatements(node.Statements)
+		return evalBlockStatements(node.Statements, env)
 
 	case *ast.IfExpression:
-		return evalIfExpression(node)
+		return evalIfExpression(node, env)
 
 	case *ast.ReturnStatement:
-		val := Eval(node.ReturnValue)
+		val := Eval(node.ReturnValue, env)
 		if isError(val) {
 			return val
 		}
@@ -66,11 +66,11 @@ func Eval(node ast.Node) object.Object {
 
 }
 
-func evalProgram(stmts []ast.Statement) object.Object {
+func evalProgram(stmts []ast.Statement, env *object.Environment) object.Object {
 	var result object.Object
 
 	for _, statement := range stmts {
-		result = Eval(statement)
+		result = Eval(statement, env)
 
 		switch result := result.(type) {
 		case *object.ReturnValue:
@@ -85,11 +85,11 @@ func evalProgram(stmts []ast.Statement) object.Object {
 
 // evalProgram とほぼ同じ。returnvalueをアンラップしてvalueを返すかどうかだけ違う
 //  if文の中とかにいるときに、returnが発生したらreturn objectを返したい。
-func evalBlockStatements(stmts []ast.Statement) object.Object {
+func evalBlockStatements(stmts []ast.Statement, env *object.Environment) object.Object {
 	var result object.Object
 
 	for _, statement := range stmts {
-		result = Eval(statement)
+		result = Eval(statement, env)
 
 		rt := result.Type()
 		if rt == object.RETURN_VALUE_OBJ || rt == object.ERROR_OBJ {
@@ -191,16 +191,16 @@ func evalIntegerInfixExpression(operator string, left, right object.Object) obje
 	}
 }
 
-func evalIfExpression(ie *ast.IfExpression) object.Object {
-	condition := Eval(ie.Condition)
+func evalIfExpression(ie *ast.IfExpression, env *object.Environment) object.Object {
+	condition := Eval(ie.Condition, env)
 	if isError(condition) {
 		return condition
 	}
 
 	if isTruthy(condition) {
-		return Eval(ie.Consequence)
+		return Eval(ie.Consequence, env)
 	} else if ie.Alternative != nil {
-		return Eval(ie.Alternative)
+		return Eval(ie.Alternative, env)
 	} else {
 		return NULL
 	}
