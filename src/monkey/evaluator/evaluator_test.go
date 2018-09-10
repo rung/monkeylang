@@ -182,6 +182,7 @@ func TestReturnStatements(t *testing.T) {
 }
 
 func TestErrorHandling(t *testing.T) {
+	// 非対応の演算に対してエラーが生成されること, エラーが生成された際に次の評価を止めることを検証している
 	tests := []struct {
 		input           string
 		expectedMessage string
