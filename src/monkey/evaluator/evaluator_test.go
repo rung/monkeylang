@@ -304,3 +304,17 @@ func TestFunctionApplication(t *testing.T) {
 		testIntegerObject(t, testEval(tt.input), tt.expected)
 	}
 }
+
+func TestClosures(t *testing.T) {
+	// functionの中にあるfunction(returnされるfunction)を作る際に、evaluatorではその際のEnvironmentを保存している
+	//  そのためreturnされるfunctionのObjectには、xの値が保存されている
+	input := `
+let newAdder = fn(x) {
+	fn(y) { x + y };
+};
+
+let addTwo = newAdder(2);
+addTwo(2);
+`
+	testIntegerObject(t, testEval(input), 4)
+}
