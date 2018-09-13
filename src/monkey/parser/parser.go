@@ -461,7 +461,7 @@ func (p *Parser) parserCallExpression(function ast.Expression) ast.Expression {
 func (p *Parser) parseCallArguments() []ast.Expression {
 	args := []ast.Expression{}
 
-	// add()
+	// e.g. add() (no argument handling)
 	if p.peekTokenIs(token.RPAREN) {
 		p.nextToken()
 		return args
