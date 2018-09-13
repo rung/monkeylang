@@ -41,7 +41,8 @@ func New(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.LPAREN, p.parseGroupedExpression)
 	p.registerPrefix(token.IF, p.parseIfExpression)
 	p.registerPrefix(token.FUNCTION, p.parseFunctionLiteral)
-	p.registerPrefix(token.STRING, p.parserStringLiteral)
+	p.registerPrefix(token.STRING, p.parseStringLiteral)
+	p.registerPrefix(token.LBRACKET, p.parseArrayLiteral)
 
 	p.infixParseFns = make(map[token.TokenType]infixParseFn)
 	p.registerInfix(token.PLUS, p.parseInfixExpression)
@@ -453,40 +454,50 @@ func (p *Parser) parseFunctionParameters() []*ast.Identifier {
 //  関数の結合度は一番強いので、"("の優先度は一番高い
 func (p *Parser) parserCallExpression(function ast.Expression) ast.Expression {
 	exp := &ast.CallExpression{Token: p.curToken, Function: function}
-	exp.Arguments = p.parseCallArguments()
+	exp.Arguments = p.parseExpressionList(token.RPAREN)
 	return exp
 
 }
 
-func (p *Parser) parseCallArguments() []ast.Expression {
-	args := []ast.Expression{}
+// String
+func (p *Parser) parseStringLiteral() ast.Expression {
+	return &ast.StringLiteral{Token: p.curToken, Value: p.curToken.Literal}
+}
+
+// array
+func (p *Parser) parseArrayLiteral() ast.Expression {
+	array := &ast.ArrayLiteral{Token: p.curToken}
+
+	array.Elements = p.parseExpressionList(token.RBRACKET)
+
+	return array
+}
+
+// parse arguments(for calling function, array)
+func (p *Parser) parseExpressionList(end token.TokenType) []ast.Expression {
+	list := []ast.Expression{}
 
 	// e.g. add() (no argument handling)
-	if p.peekTokenIs(token.RPAREN) {
+	if p.peekTokenIs(end) {
 		p.nextToken()
-		return args
+		return list
 	}
 
 	// curToken is x
 	p.nextToken()
-	args = append(args, p.parseExpression(LOWEST))
+	list = append(list, p.parseExpression(LOWEST))
 
 	for p.peekTokenIs(token.COMMA) {
 		p.nextToken()
 		// curToken is ,
 		p.nextToken()
-		args = append(args, p.parseExpression(LOWEST))
+		list = append(list, p.parseExpression(LOWEST))
 		//,か)がpeekTokenに来ると戻ってくる
 	}
 
-	if !p.expectPeek(token.RPAREN) {
+	if !p.expectPeek(end) {
 		return nil
 	}
 
-	return args
-}
-
-// String
-func (p *Parser) parserStringLiteral() ast.Expression {
-	return &ast.StringLiteral{Token: p.curToken, Value: p.curToken.Literal}
+	return list
 }
