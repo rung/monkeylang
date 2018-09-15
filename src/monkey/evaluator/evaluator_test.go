@@ -364,6 +364,9 @@ func TestBuiltinFunctions(t *testing.T) {
 		{`len([1, 2, 3])`, 3},
 		{`let a = [1, true, "3"]; len(a)`, 3},
 		{`first([1, 2, 3])`, 1},
+		{`last([1, 2, 3])`, 3},
+		{`rest([1, 2, 3])`, "[2, 3]"},
+		{`let a = [1, 2, 3]; let b = rest(a); a`, "[1, 2, 3]"},
 	}
 
 	for _, tt := range tests {
@@ -373,18 +376,25 @@ func TestBuiltinFunctions(t *testing.T) {
 		case int:
 			testIntegerObject(t, evaluated, int64(expected))
 		case string:
-			errObj, ok := evaluated.(*object.Error)
-			if !ok {
-				t.Errorf("object is not Error. got=%T (%+v)",
-					expected, errObj.Message)
+			switch obj := evaluated.(type) {
+			case *object.Error:
+				if obj.Message != expected {
+					t.Errorf("wrong error message. expected=%q, got=%q",
+						expected, obj.Message)
+				}
+
+			case *object.Array:
+				if obj.Inspect() != expected {
+					t.Errorf("wrong array. expected=%q, got=%q",
+						expected, obj.Inspect())
+				}
+			default:
+				t.Errorf("object is not supporting type. got=%T (%+v)",
+					expected)
 				continue
 			}
-			if errObj.Message != expected {
-				t.Errorf("wrong error message. expected=%q, got=%q",
-					expected, errObj.Message)
-			}
-		}
 
+		}
 	}
 }
 
