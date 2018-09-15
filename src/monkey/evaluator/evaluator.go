@@ -159,10 +159,13 @@ func evalBlockStatements(stmts []ast.Statement, env *object.Environment) object.
 	for _, statement := range stmts {
 		result = Eval(statement, env)
 
-		rt := result.Type()
-		if rt == object.RETURN_VALUE_OBJ || rt == object.ERROR_OBJ {
-			//ここだけparseProgramと違う
-			return result
+		// letstatementなどの場合はreturnがnilになるのでうまくhandleできるようにifを付ける
+		if result != nil {
+			rt := result.Type()
+			if rt == object.RETURN_VALUE_OBJ || rt == object.ERROR_OBJ {
+				//ここだけparseProgramと違う
+				return result
+			}
 		}
 	}
 
