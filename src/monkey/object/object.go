@@ -3,6 +3,7 @@ package object
 import (
 	"bytes"
 	"fmt"
+	"hash/fnv"
 	"monkey/ast"
 	"strings"
 )
@@ -19,6 +20,7 @@ const (
 	STRING_OBJ       = "STRING"
 	BUILTIN_OBJ      = "BUILTIN"
 	ARRAY_OBJ        = "ARRAY"
+	HASH_OBJ         = "HASH"
 )
 
 type Object interface {
@@ -157,4 +159,49 @@ func (ao *Array) Inspect() string {
 	out.WriteString("]")
 
 	return out.String()
+}
+
+// Hash
+//  map[HashKey]HashPairのobjectを持つ
+//  HashKeyはInteger, Boolean, Stringで別の内容を持つ.
+//   StringのHash値は計算して求める(hash/fnv使用).
+//  HashPairはKeyとValueと組み合わせを持つ(Inspect()でkeyも出したいのでHashPairにkey入れておく)
+type HashPair struct {
+	Key   Object
+	Value Object
+}
+
+type Hash struct {
+	Pairs map[HashKey]HashPair
+}
+
+func (h *Hash) Type() ObjectType { return HASH_OBJ }
+
+type HashKey struct {
+	Type  ObjectType
+	Value uint64
+}
+
+func (b *Boolean) HashKey() HashKey {
+	var value uint64
+
+	if b.Value {
+		value = 1
+	} else {
+		value = 0
+	}
+
+	return HashKey{Type: b.Type(), Value: value}
+}
+
+func (i *Integer) HashKey() HashKey {
+	return HashKey{Type: i.Type(), Value: uint64(i.Value)}
+}
+
+// TODO: hash の衝突の考慮をするべき
+func (s *String) HashKey() HashKey {
+	h := fnv.New64a()
+	h.Write([]byte(s.Value))
+
+	return HashKey{Type: s.Type(), Value: h.Sum64()}
 }
