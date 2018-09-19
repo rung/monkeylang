@@ -186,7 +186,7 @@ func (h *Hash) Inspect() string {
 	}
 
 	out.WriteString("{")
-	out.WriteString(strings.Join(pairs, ", l"))
+	out.WriteString(strings.Join(pairs, ", "))
 	out.WriteString("}")
 
 	return out.String()
