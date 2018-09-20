@@ -15,7 +15,7 @@ import (
 
 func main() {
 
-	if os.Args[1] == "repl" {
+	if len(os.Args) == 1 || os.Args[1] == "repl" {
 		user, err := user.Current()
 		if err != nil {
 			panic(err)
