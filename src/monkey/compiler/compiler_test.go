@@ -22,6 +22,7 @@ func TestIntegerArighmetic(t *testing.T) {
 			input:             "1 + 2",
 			expectedConstants: []interface{}{1, 2},
 			expectedInstructions: []code.Instructions{
+				// 1回目のConstant代入は0, 2回目は1がoperandに入る
 				code.Make(code.OpConstant, 0),
 				code.Make(code.OpConstant, 1),
 			},
