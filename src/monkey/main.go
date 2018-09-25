@@ -15,16 +15,26 @@ import (
 
 func main() {
 
-	if len(os.Args) == 1 || os.Args[1] == "repl" {
+	if len(os.Args) == 1 || os.Args[1] == "interpreter" {
 		user, err := user.Current()
 		if err != nil {
 			panic(err)
 		}
 
 		fmt.Printf("Hello %s\n", user.Username)
-		fmt.Printf("Feel free to type in commands\n")
-		repl.Start(os.Stdin, os.Stdout)
+		fmt.Printf("This is interpreter mode. Feel free to type in commands\n")
+		repl.StartInterpreter(os.Stdin, os.Stdout)
 		return
+	} else if os.Args[1] == "compiler" {
+		user, err := user.Current()
+		if err != nil {
+			panic(err)
+		}
+		fmt.Printf("Hello %s\n", user.Username)
+		fmt.Printf("This is compiler mode. Feel free to type in commands\n")
+		repl.StartVm(os.Stdin, os.Stdout)
+		return
+
 	}
 
 	fp, err := os.Open(os.Args[1])
