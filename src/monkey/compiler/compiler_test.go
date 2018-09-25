@@ -16,7 +16,7 @@ type compilerTestCase struct {
 	expectedInstructions []code.Instructions
 }
 
-func TestIntegerArighmetic(t *testing.T) {
+func TestIntegerArithmetic(t *testing.T) {
 	tests := []compilerTestCase{
 		{
 			input:             "1 + 2",
@@ -25,6 +25,18 @@ func TestIntegerArighmetic(t *testing.T) {
 				// 1回目のConstant代入は0, 2回目は1がoperandに入る
 				code.Make(code.OpConstant, 0),
 				code.Make(code.OpConstant, 1),
+				code.Make(code.OpAdd),
+				code.Make(code.OpPop),
+			},
+		},
+		{
+			input:             "1; 2",
+			expectedConstants: []interface{}{1, 2},
+			expectedInstructions: []code.Instructions{
+				code.Make(code.OpConstant, 0),
+				code.Make(code.OpPop),
+				code.Make(code.OpConstant, 1),
+				code.Make(code.OpPop),
 			},
 		},
 	}
@@ -73,7 +85,7 @@ func testInstructions(expected []code.Instructions, actual code.Instructions) er
 
 	for i, ins := range concatted {
 		if actual[i] != ins {
-			return fmt.Errorf("wong instruction at %d.\nwant=%q\ngot=%q",
+			return fmt.Errorf("wrong instruction at %d.\nwant=%q\ngot=%q",
 				i, concatted, actual)
 		}
 	}
