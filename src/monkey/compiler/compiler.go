@@ -131,6 +131,11 @@ func (c *Compiler) Compile(node ast.Node) error {
 		//  “let’s just put garbage in there and fix it later”.
 		//   jumpのオフセット指定は先に偽のoffsetを入れておいてあとで修正する方針にする
 		//   そのためjump命令の場所は保存しておく
+		//  Layout
+		//   [OpJumpNotTruthy](to [Alternative])
+		//   [Consequence]...
+		//   [OpJump](to after [Alternative])
+		//   [Alternative]
 		jumpNotTruthyPos := c.emit(code.OpJumpNotTruthy, 9999)
 
 		err = c.Compile(node.Consequence)
@@ -142,17 +147,15 @@ func (c *Compiler) Compile(node ast.Node) error {
 			c.removeLastPop()
 		}
 
-		// if文がelseだった場合のjump先書き換え
+		// Emit an `OpJump` with a bogus value(else文を飛び越える)
+		jumpPos := c.emit(code.OpJump, 9999)
+
+		afterConsequencePos := len(c.instructions)
+		c.changeOperand(jumpNotTruthyPos, afterConsequencePos)
+
 		if node.Alternative == nil {
-			afterConsequencePos := len(c.instructions)
-			c.changeOperand(jumpNotTruthyPos, afterConsequencePos)
+			c.emit(code.OpNull)
 		} else {
-			// Emit an `OpJump` with a bogus value(else文を飛び越える)
-			jumpPos := c.emit(code.OpJump, 9999)
-
-			afterConsequencePos := len(c.instructions)
-			c.changeOperand(jumpNotTruthyPos, afterConsequencePos)
-
 			err := c.Compile(node.Alternative)
 			if err != nil {
 				return err
@@ -162,9 +165,9 @@ func (c *Compiler) Compile(node ast.Node) error {
 				c.removeLastPop()
 			}
 
-			afterAlternativePos := len(c.instructions)
-			c.changeOperand(jumpPos, afterAlternativePos)
 		}
+		afterAlternativePos := len(c.instructions)
+		c.changeOperand(jumpPos, afterAlternativePos)
 
 	case *ast.BlockStatement:
 		for _, s := range node.Statements {
