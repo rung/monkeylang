@@ -13,6 +13,8 @@ type Compiler struct {
 
 	lastInstruction     EmittedInstruction
 	previousInstruction EmittedInstruction
+
+	symbolTable *SymbolTable
 }
 
 type EmittedInstruction struct {
@@ -28,6 +30,8 @@ func New() *Compiler {
 
 		lastInstruction:     EmittedInstruction{}, // 最後に出力したInstruction
 		previousInstruction: EmittedInstruction{}, // 最後-1に出力したInstruction
+
+		symbolTable: NewSymbolTable(),
 	}
 }
 
@@ -203,6 +207,18 @@ func (c *Compiler) Compile(node ast.Node) error {
 		if err != nil {
 			return err
 		}
+		symbol := c.symbolTable.Define(node.Name.Value)
+		// pull variable from stack
+		c.emit(code.OpSetGlobal, symbol.Index)
+
+	case *ast.Identifier:
+		symbol, ok := c.symbolTable.Resolve(node.Value)
+		if !ok {
+			// Memo: this is compile time error
+			return fmt.Errorf("undefined variable %s", node.Value)
+		}
+
+		c.emit(code.OpGetGlobal, symbol.Index)
 	}
 	return nil
 }
