@@ -35,28 +35,6 @@ func New() *Compiler {
 	}
 }
 
-type SymbolScope string
-
-const (
-	GlobalScope SymbolScope = "GLOBAL"
-)
-
-type SymbolTable struct {
-	store          map[string]Symbol
-	numDefinitions int
-}
-
-type Symbol struct {
-	Name  string
-	Scope SymbolScope
-	Index int
-}
-
-func NewSymbolTable() *SymbolTable {
-	s := make(map[string]Symbol)
-	return &SymbolTable{store: s}
-}
-
 // Memo: instructionsとconstantsを埋めていく？
 //  定数の保存と、バイトコードの生成
 //  evaluatorと似た書き方でastを探索していく
