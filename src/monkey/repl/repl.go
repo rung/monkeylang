@@ -54,6 +54,11 @@ func printParserErrors(out io.Writer, errors []string) {
 
 func StartVm(in io.Reader, out io.Writer) {
 	scanner := bufio.NewScanner(in)
+
+	constants := []object.Object{}
+	globals := make([]object.Object, vm.GlobalsSize)
+	symbolTable := compiler.NewSymbolTable()
+
 	for {
 		fmt.Printf(PROMPT)
 		scanned := scanner.Scan()
@@ -73,16 +78,18 @@ func StartVm(in io.Reader, out io.Writer) {
 		io.WriteString(out, "AST: "+program.String())
 		io.WriteString(out, "\n")
 
-		comp := compiler.New()
+		comp := compiler.NewWithState(symbolTable, constants)
 		err := comp.Compile(program)
 		if err != nil {
 			fmt.Fprintf(out, "Woops! Compilation failed:\n %s\n", err)
 			continue
 		}
+		code := comp.Bytecode()
+		constants = code.Constants
 
-		io.WriteString(out, "Bytecode:\n----\n"+comp.Bytecode().Instructions.String()+"-------\n")
+		io.WriteString(out, "Bytecode:\n----\n"+code.Instructions.String()+"-------\n")
 
-		machine := vm.New(comp.Bytecode())
+		machine := vm.NewWithGlobalStore(code, globals)
 		err = machine.Run()
 		if err != nil {
 			fmt.Fprintf(out, "Woops! Executing bytecode failed:\n %s\n", err)
