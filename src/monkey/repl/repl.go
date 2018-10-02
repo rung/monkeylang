@@ -80,6 +80,8 @@ func StartVm(in io.Reader, out io.Writer) {
 			continue
 		}
 
+		io.WriteString(out, "Bytecode:\n----\n"+comp.Bytecode().Instructions.String()+"-------\n")
+
 		machine := vm.New(comp.Bytecode())
 		err = machine.Run()
 		if err != nil {
