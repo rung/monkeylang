@@ -35,6 +35,15 @@ func New() *Compiler {
 	}
 }
 
+// NewWithState is used in repl.
+//  this can hold old SymbolTable and constants.
+func NewWithState(s *SymbolTable, constants []object.Object) *Compiler {
+	compiler := New()
+	compiler.symbolTable = s
+	compiler.constants = constants
+	return compiler
+}
+
 // Memo: instructionsとconstantsを埋めていく？
 //  定数の保存と、バイトコードの生成
 //  evaluatorと似た書き方でastを探索していく
