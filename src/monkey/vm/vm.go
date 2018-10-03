@@ -302,6 +302,7 @@ func (vm *VM) buildArray(startIndex, endIndex int) object.Object {
 	elements := make([]object.Object, endIndex-startIndex)
 
 	for i := startIndex; i < endIndex; i++ {
+		// objet.Objectはポインタ. stack上のObjectを指しているポインタをelementsにいれている
 		elements[i-startIndex] = vm.stack[i]
 	}
 
