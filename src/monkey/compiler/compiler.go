@@ -9,11 +9,7 @@ import (
 )
 
 type Compiler struct {
-	instructions code.Instructions
-	constants    []object.Object
-
-	lastInstruction     EmittedInstruction
-	previousInstruction EmittedInstruction
+	constants []object.Object
 
 	symbolTable *SymbolTable
 
@@ -34,15 +30,41 @@ type EmittedInstruction struct {
 
 // New makes new Compiler struct
 func New() *Compiler {
-	return &Compiler{
-		instructions: code.Instructions{},
-		constants:    []object.Object{},
-
-		lastInstruction:     EmittedInstruction{}, // 最後に出力したInstruction
-		previousInstruction: EmittedInstruction{}, // 最後-1に出力したInstruction
-
-		symbolTable: NewSymbolTable(),
+	mainScope := CompilationScope{
+		instructions:        code.Instructions{},
+		lastInstruction:     EmittedInstruction{},
+		previousInstruction: EmittedInstruction{},
 	}
+
+	return &Compiler{
+		constants:   []object.Object{},
+		symbolTable: NewSymbolTable(),
+		scopes:      []CompilationScope{mainScope},
+		scopeIndex:  0,
+	}
+}
+
+func (c *Compiler) enterScope() {
+	scope := CompilationScope{
+		instructions:        code.Instructions{},
+		lastInstruction:     EmittedInstruction{},
+		previousInstruction: EmittedInstruction{},
+	}
+	c.scopes = append(c.scopes, scope)
+	c.scopeIndex++
+}
+
+func (c *Compiler) leaveScope() code.Instructions {
+	instructions := c.currentInstruction()
+
+	c.scopes = c.scopes[:len(c.scopes)-1]
+	c.scopeIndex--
+
+	return instructions
+}
+
+func (c *Compiler) currentInstruction() code.Instructions {
+	return c.scopes[c.scopeIndex].instructions
 }
 
 // NewWithState is used in repl.
@@ -173,7 +195,7 @@ func (c *Compiler) Compile(node ast.Node) error {
 		// Emit an `OpJump` with a bogus value(else文を飛び越える)
 		jumpPos := c.emit(code.OpJump, 9999)
 
-		afterConsequencePos := len(c.instructions)
+		afterConsequencePos := len(c.currentInstruction())
 		c.changeOperand(jumpNotTruthyPos, afterConsequencePos)
 
 		if node.Alternative == nil {
@@ -189,7 +211,7 @@ func (c *Compiler) Compile(node ast.Node) error {
 			}
 
 		}
-		afterAlternativePos := len(c.instructions)
+		afterAlternativePos := len(c.currentInstruction())
 		c.changeOperand(jumpPos, afterAlternativePos)
 
 	case *ast.BlockStatement:
@@ -268,7 +290,7 @@ func (c *Compiler) Compile(node ast.Node) error {
 
 func (c *Compiler) Bytecode() *Bytecode {
 	return &Bytecode{
-		Instructions: c.instructions,
+		Instructions: c.currentInstruction(),
 		Constants:    c.constants,
 	}
 }
@@ -295,35 +317,46 @@ func (c *Compiler) emit(op code.Opcode, operands ...int) int {
 }
 
 func (c *Compiler) addInstruction(ins []byte) int {
-	// Memo:  返す値は書き込む前のlen
-	posNewInstruction := len(c.instructions)
-	c.instructions = append(c.instructions, ins...)
+	posNewInstruction := len(c.currentInstruction())
+	updatedInstructions := append(c.currentInstruction(), ins...)
+
+	c.scopes[c.scopeIndex].instructions = updatedInstructions
+
 	return posNewInstruction
 }
 
 // あとでPop命令などを削除したいときのためなどに、最後に出力したInstructionを記録する
 func (c *Compiler) setLastInstruction(op code.Opcode, pos int) {
-	previous := c.lastInstruction
+	previous := c.scopes[c.scopeIndex].lastInstruction
 	last := EmittedInstruction{Opcode: op, Position: pos}
 
-	c.previousInstruction = previous
-	c.lastInstruction = last
+	c.scopes[c.scopeIndex].previousInstruction = previous
+	c.scopes[c.scopeIndex].lastInstruction = last
 }
 
 func (c *Compiler) lastInstructionIsPop() bool {
-	return c.lastInstruction.Opcode == code.OpPop
+	return c.scopes[c.scopeIndex].lastInstruction.Opcode == code.OpPop
 }
 
 func (c *Compiler) removeLastPop() {
-	c.instructions = c.instructions[:c.lastInstruction.Position]
-	c.lastInstruction = c.previousInstruction
+	last := c.scopes[c.scopeIndex].lastInstruction
+	previous := c.scopes[c.scopeIndex].previousInstruction
+
+	old := c.currentInstruction()
+	new := old[:last.Position]
+
+	// Memo: previousInstructionは更新しない
+	c.scopes[c.scopeIndex].instructions = new
+	c.scopes[c.scopeIndex].lastInstruction = previous
 }
 
 // replaceInstruciton can patch previous bytecodes.
 // そのまま上書きする。同じopcodeの命令に上書きすることを前提としている
 func (c *Compiler) replaceInstruction(pos int, newInstruction []byte) {
+	ins := c.currentInstruction()
+
 	for i := 0; i < len(newInstruction); i++ {
-		c.instructions[pos+i] = newInstruction[i]
+		ins[pos+i] = newInstruction[i]
 	}
 }
 
@@ -331,7 +364,7 @@ func (c *Compiler) replaceInstruction(pos int, newInstruction []byte) {
 // あとでjump先をback-patchingするときに使用
 // そのまま上書きする。同じopcodeの命令に上書きすることを前提としている
 func (c *Compiler) changeOperand(opPos int, operand int) {
-	op := code.Opcode(c.instructions[opPos])
+	op := code.Opcode(c.currentInstruction()[opPos])
 	newInstruction := code.Make(op, operand)
 
 	c.replaceInstruction(opPos, newInstruction)
