@@ -227,6 +227,17 @@ func (vm *VM) Run() error {
 			if err != nil {
 				return err
 			}
+
+		case code.OpReturn:
+			vm.popFrame()
+			// pop (*object.CompiledFunction)
+			vm.pop()
+
+			err := vm.push(Null)
+			if err != nil {
+				return err
+			}
+
 		}
 	}
 	return nil
