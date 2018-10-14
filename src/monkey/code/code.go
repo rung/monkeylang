@@ -35,6 +35,8 @@ const (
 	OpCall
 	OpReturnValue
 	OpReturn
+	OpGetLocal
+	OpSetLocal
 )
 
 type Definition struct {
@@ -69,7 +71,9 @@ var definitions = map[Opcode]*Definition{
 	// code.OpReturnValue to tell the VM to return the value on top of the stack to the calling context and to resume execution there.
 	OpReturnValue: {"OpReturnValue", []int{}},
 	// code.OpReturn, which is similar to code.OpReturnValue, except that there is no explicit value to return but an implicit vm.Null.
-	OpReturn: {"OpReturn", []int{}},
+	OpReturn:   {"OpReturn", []int{}},
+	OpGetLocal: {"OpGetLocal", []int{1}},
+	OpSetLocal: {"OpSetLocal", []int{1}},
 }
 
 // Lookup returns *Definition of opcode
@@ -105,6 +109,8 @@ func Make(op Opcode, operands ...int) []byte {
 		case 2:
 			// PutUint16 put uint16 to []byte
 			binary.BigEndian.PutUint16(instruction[offset:], uint16(o))
+		case 1:
+			instruction[offset] = byte(o)
 		}
 		offset += width
 	}
