@@ -133,7 +133,7 @@ func TestResolveNestedLocal(t *testing.T) {
 			[]Symbol{
 				Symbol{Name: "a", Scope: GlobalScope, Index: 0},
 				Symbol{Name: "b", Scope: GlobalScope, Index: 1},
-				Symbol{Name: "d", Scope: LocalScope, Index: 0},
+				Symbol{Name: "e", Scope: LocalScope, Index: 0},
 				Symbol{Name: "f", Scope: LocalScope, Index: 1},
 			},
 		},
@@ -147,7 +147,7 @@ func TestResolveNestedLocal(t *testing.T) {
 				continue
 			}
 			if result != sym {
-				t.Error("expected %s to resolve to %+v, got=%+v",
+				t.Errorf("expected %s to resolve to %+v, got=%+v",
 					sym.Name, sym, result)
 			}
 		}
