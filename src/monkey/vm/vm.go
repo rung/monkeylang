@@ -169,6 +169,24 @@ func (vm *VM) Run() error {
 				return err
 			}
 
+		case code.OpSetLocal:
+			localIndex := code.ReadUint8(ins[ip+1:])
+			vm.currentFrame().ip += 1
+
+			frame := vm.currentFrame()
+			vm.stack[frame.basePointer+int(localIndex)] = vm.pop()
+
+		case code.OpGetLocal:
+			localIndex := code.ReadUint8(ins[ip+1:])
+			vm.currentFrame().ip += 1
+
+			frame := vm.currentFrame()
+			// local変数の値をpushする
+			err := vm.push(vm.stack[frame.basePointer+int(localIndex)])
+			if err != nil {
+				return err
+			}
+
 		case code.OpArray:
 			numElements := int(code.ReadUint16(ins[ip+1:]))
 			vm.currentFrame().ip += 2
@@ -222,9 +240,9 @@ func (vm *VM) Run() error {
 		case code.OpReturnValue:
 			returnValue := vm.pop()
 
-			vm.popFrame()
-			// pop (*object.CompiledFunction)
-			vm.pop()
+			frame := vm.popFrame()
+			// reset sp and -1(pop (*object.CompiledFunction))
+			vm.sp = frame.basePointer - 1
 
 			err := vm.push(returnValue)
 			if err != nil {
@@ -232,9 +250,9 @@ func (vm *VM) Run() error {
 			}
 
 		case code.OpReturn:
-			vm.popFrame()
-			// pop (*object.CompiledFunction)
-			vm.pop()
+			frame := vm.popFrame()
+			// reset sp and -1(pop (*object.CompiledFunction))
+			vm.sp = frame.basePointer - 1
 
 			err := vm.push(Null)
 			if err != nil {
