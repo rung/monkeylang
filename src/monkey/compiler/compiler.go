@@ -334,6 +334,11 @@ func (c *Compiler) Compile(node ast.Node) error {
 		c.emit(code.OpReturnValue)
 
 	case *ast.CallExpression:
+		// Layout
+		//  arg 3
+		//  arg 2
+		//  arg 1
+		//  CompiledFunction
 		err := c.Compile(node.Function)
 		if err != nil {
 			return err
