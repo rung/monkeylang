@@ -68,7 +68,7 @@ var Builtins = []struct {
 						len(args))
 				}
 				if args[0].Type() != ARRAY_OBJ {
-					return newError("argument to `first` must be ARRAY, got %s",
+					return newError("argument to `last` must be ARRAY, got %s",
 						args[0].Type())
 				}
 
