@@ -48,6 +48,8 @@ func (s *SymbolTable) Define(name string) Symbol {
 	return symbol
 }
 
+// Local内で解決できなく、GlobalScopeでもBuiltinScopeでもない場合、
+// FreeScopeと判定されてdefinefreeが呼ばれる
 func (s *SymbolTable) Resolve(name string) (Symbol, bool) {
 	obj, ok := s.store[name]
 	if !ok && s.Outer != nil {
@@ -72,6 +74,8 @@ func (s *SymbolTable) DefineBuiltin(index int, name string) Symbol {
 	return symbol
 }
 
+// 呼ばれるとFreeScopeのSymbolで上書きする.
+// また、FreeSymbolsにSymbolを追加する.
 func (s *SymbolTable) definefree(original Symbol) Symbol {
 	s.FreeSymbols = append(s.FreeSymbols, original)
 
