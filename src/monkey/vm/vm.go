@@ -107,11 +107,22 @@ func (vm *VM) Run() error {
 			}
 
 		case code.OpClosure:
+			// OpClosure(関数の定義, Memo: OpCallとは違う)が呼ばれるとき、Free variableが必要になるときは、
+			//  前にFree variableをstackに積む命令が書かれている
+			//  読むときにstackとInstructionがごっちゃにならないよう注意
+			//   Instruction:
+			//     OpGetLocal 0 (free variable0)
+			//     OpGetLocal 1 (free variable1)
+			//     OpClosure (constIndex) 2
+			//
+			//   Stack layout:
+			//     free variable1
+			//     free variable0
 			constIndex := code.ReadUint16(ins[ip+1:])
-			_ = code.ReadUint8(ins[ip+3:])
+			numFree := code.ReadUint8(ins[ip+3:])
 			vm.currentFrame().ip += 3
 
-			err := vm.pushClosure(int(constIndex))
+			err := vm.pushClosure(int(constIndex), int(numFree))
 			if err != nil {
 				return nil
 			}
@@ -278,7 +289,16 @@ func (vm *VM) Run() error {
 			if err != nil {
 				return err
 			}
+		case code.OpGetFree:
+			freeIndex := code.ReadUint8(ins[ip+1:])
+			vm.currentFrame().ip += 1
 
+			currentClosure := vm.currentFrame().cl
+			// 関数定義の際、Free(slice)にfree variableが積まれている
+			err := vm.push(currentClosure.Free[freeIndex])
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -542,14 +562,20 @@ func (vm *VM) callBuiltin(builtin *object.Builtin, numArgs int) error {
 	return nil
 }
 
-func (vm *VM) pushClosure(constIndex int) error {
+func (vm *VM) pushClosure(constIndex int, numFree int) error {
 	constant := vm.constants[constIndex]
 	function, ok := constant.(*object.CompiledFunction)
 	if !ok {
 		return fmt.Errorf("not a function: %+v", constant)
 	}
 
-	closure := &object.Closure{Fn: function}
+	free := make([]object.Object, numFree)
+	// stackに積まれたfree variableをfreeに入れる
+	for i := 0; i < numFree; i++ {
+		free[i] = vm.stack[vm.sp-numFree+i]
+	}
+	vm.sp = vm.sp - numFree
+	closure := &object.Closure{Fn: function, Free: free}
 	return vm.push(closure)
 }
 
