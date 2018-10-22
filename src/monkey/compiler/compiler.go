@@ -304,6 +304,7 @@ func (c *Compiler) Compile(node ast.Node) error {
 			c.symbolTable.Define(p.Value)
 		}
 
+		// OpGetFreeはnode.Bodyの中で*ast.IdentifierをCompileするときなどに呼ばれる
 		err := c.Compile(node.Body)
 		if err != nil {
 			return err
@@ -321,9 +322,11 @@ func (c *Compiler) Compile(node ast.Node) error {
 		// functionの中のfreesymbolsを記録しておく
 		freeSymbols := c.symbolTable.FreeSymbols
 		numLocals := c.symbolTable.numDefinitions
+
+		// scopeを抜ける
 		instructions := c.leaveScope()
 
-		// free variableを呼び出す命令を書いたあと、OpClosureを書く
+		// 呼ばれた関数内のfree variableをStackに積む命令を吐いたあと、OpClosureを吐く
 		for _, s := range freeSymbols {
 			c.loadSymbol(s)
 		}
