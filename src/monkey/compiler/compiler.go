@@ -323,7 +323,7 @@ func (c *Compiler) Compile(node ast.Node) error {
 		numLocals := c.symbolTable.numDefinitions
 		instructions := c.leaveScope()
 
-		// freesymbolをスタックに積んでいく
+		// free variableを呼び出す命令を書いたあと、OpClosureを書く
 		for _, s := range freeSymbols {
 			c.loadSymbol(s)
 		}
