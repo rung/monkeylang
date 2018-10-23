@@ -11,7 +11,7 @@ import (
 type Gen struct {
 	constants   []object.Object
 	instraction code.Instructions
-	assembly    *bytes.Buffer
+	Assembly    *bytes.Buffer
 }
 
 func New(b *compiler.Bytecode) *Gen {
@@ -23,13 +23,13 @@ func New(b *compiler.Bytecode) *Gen {
 }
 
 func (g *Gen) Genx64() error {
-	g.assembly = &bytes.Buffer{}
+	g.Assembly = &bytes.Buffer{}
 
 	// write header
-	fmt.Fprintln(g.assembly, ".intel_syntax noprefix\n")
-	fmt.Fprintln(g.assembly, ".text")
-	fmt.Fprintln(g.assembly, ".global main")
-	fmt.Fprintln(g.assembly, "main:")
+	fmt.Fprintln(g.Assembly, ".intel_syntax noprefix\n")
+	fmt.Fprintln(g.Assembly, ".text")
+	fmt.Fprintln(g.Assembly, ".global main")
+	fmt.Fprintln(g.Assembly, "main:")
 
 	for ip := 0; ip < len(g.instraction); ip++ {
 		op := code.Opcode(g.instraction[ip])
@@ -40,20 +40,25 @@ func (g *Gen) Genx64() error {
 
 			obj := g.constants[constIndex]
 			i := obj.(*object.Integer).Value
-			fmt.Fprintf(g.assembly, "	push %d\n", i)
+			fmt.Fprintf(g.Assembly, "	push %d\n", i)
 		case code.OpReturnValue:
-			fmt.Fprintln(g.assembly, "	pop rax")
-			fmt.Fprintln(g.assembly, "	ret")
+			fmt.Fprintln(g.Assembly, "	pop rax")
+			fmt.Fprintln(g.Assembly, "	ret")
 		case code.OpAdd:
-			fmt.Fprintln(g.assembly, "	pop rbx")
-			fmt.Fprintln(g.assembly, "	pop rax")
-			fmt.Fprintln(g.assembly, "	add rax, rbx")
-			fmt.Fprintln(g.assembly, "	push rax")
+			fmt.Fprintln(g.Assembly, "	pop rbx")
+			fmt.Fprintln(g.Assembly, "	pop rax")
+			fmt.Fprintln(g.Assembly, "	add rax, rbx")
+			fmt.Fprintln(g.Assembly, "	push rax")
 		case code.OpSub:
-			fmt.Fprintln(g.assembly, "	pop rbx")
-			fmt.Fprintln(g.assembly, "	pop rax")
-			fmt.Fprintln(g.assembly, "	sub rax, rbx")
-			fmt.Fprintln(g.assembly, "	push rax")
+			fmt.Fprintln(g.Assembly, "	pop rbx")
+			fmt.Fprintln(g.Assembly, "	pop rax")
+			fmt.Fprintln(g.Assembly, "	sub rax, rbx")
+			fmt.Fprintln(g.Assembly, "	push rax")
+		case code.OpMul:
+			fmt.Fprintln(g.Assembly, "	pop rbx")
+			fmt.Fprintln(g.Assembly, "	pop rax")
+			fmt.Fprintln(g.Assembly, "	imul rbx")
+			fmt.Fprintln(g.Assembly, "	push rax")
 		}
 	}
 

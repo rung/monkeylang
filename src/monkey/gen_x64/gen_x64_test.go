@@ -60,14 +60,14 @@ func TestGenerator(t *testing.T) {
 		if err != nil {
 			t.Errorf(err.Error())
 		}
-		f.Write(g.assembly.Bytes())
+		f.Write(g.Assembly.Bytes())
 		f.Close()
 
-		// change assembly to machine code and link.
+		// change Assembly to machine code and link.
 		cmd := exec.Command("/usr/bin/gcc", "/tmp/monkeytmp.s", "-o", "/tmp/monkeytmp")
 		err = cmd.Run()
 		if err != nil {
-			fmt.Println(g.assembly.String())
+			fmt.Println(g.Assembly.String())
 			t.Errorf("gcc error")
 		}
 		cmd = exec.Command("/tmp/monkeytmp")
@@ -78,7 +78,7 @@ func TestGenerator(t *testing.T) {
 			if s, ok := err.(*exec.ExitError).Sys().(syscall.WaitStatus); ok {
 				returncode = s.ExitStatus()
 			} else {
-				fmt.Println(g.assembly.String())
+				fmt.Println(g.Assembly.String())
 				t.Errorf("can't get return code")
 			}
 		} else {
@@ -87,7 +87,7 @@ func TestGenerator(t *testing.T) {
 
 		if returncode != tt.expected {
 			fmt.Println(g.instraction)
-			fmt.Println(g.assembly.String())
+			fmt.Println(g.Assembly.String())
 			t.Errorf("return code is different got=%d, expected=%d", returncode, tt.expected)
 		}
 	}
