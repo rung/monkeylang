@@ -1,6 +1,7 @@
 package gen_x64
 
 import (
+	"fmt"
 	"monkey/ast"
 	"monkey/compiler"
 	"monkey/lexer"
@@ -25,6 +26,10 @@ func TestGenerator(t *testing.T) {
 		{
 			input:    `return 1 + 1`,
 			expected: 2,
+		},
+		{
+			input:    `return 5 - 1`,
+			expected: 4,
 		},
 	}
 
@@ -56,7 +61,11 @@ func TestGenerator(t *testing.T) {
 
 		// change assembly to machine code and link.
 		cmd := exec.Command("/usr/bin/gcc", "/tmp/monkeytmp.s", "-o", "/tmp/monkeytmp")
-		_ = cmd.Run()
+		err = cmd.Run()
+		if err != nil {
+			fmt.Println(g.assembly.String())
+			t.Errorf("gcc error")
+		}
 		cmd = exec.Command("/tmp/monkeytmp")
 		err = cmd.Run()
 		returncode := -1
@@ -65,6 +74,7 @@ func TestGenerator(t *testing.T) {
 			if s, ok := err.(*exec.ExitError).Sys().(syscall.WaitStatus); ok {
 				returncode = s.ExitStatus()
 			} else {
+				fmt.Println(g.assembly.String())
 				t.Errorf("can't get return code")
 			}
 		} else {
@@ -72,6 +82,8 @@ func TestGenerator(t *testing.T) {
 		}
 
 		if returncode != tt.expected {
+			fmt.Println(g.instraction)
+			fmt.Println(g.assembly.String())
 			t.Errorf("return code is different got=%d, expected=%d", returncode, tt.expected)
 		}
 	}

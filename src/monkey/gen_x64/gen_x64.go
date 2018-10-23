@@ -49,6 +49,11 @@ func (g *Gen) Genx64() error {
 			fmt.Fprintln(g.assembly, "	pop rax")
 			fmt.Fprintln(g.assembly, "	add rax, rbx")
 			fmt.Fprintln(g.assembly, "	push rax")
+		case code.OpSub:
+			fmt.Fprintln(g.assembly, "	pop rbx")
+			fmt.Fprintln(g.assembly, "	pop rax")
+			fmt.Fprintln(g.assembly, "	sub rax, rbx")
+			fmt.Fprintln(g.assembly, "	push rax")
 		}
 	}
 
