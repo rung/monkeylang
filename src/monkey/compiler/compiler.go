@@ -376,12 +376,14 @@ func (c *Compiler) Bytecode() *Bytecode {
 	return &Bytecode{
 		Instructions: c.currentInstruction(),
 		Constants:    c.constants,
+		SymbolNum:    c.symbolTable.numDefinitions,
 	}
 }
 
 type Bytecode struct {
 	Instructions code.Instructions
 	Constants    []object.Object
+	SymbolNum    int
 }
 
 // addConstant add Object to "constants", and return index in the "constants"

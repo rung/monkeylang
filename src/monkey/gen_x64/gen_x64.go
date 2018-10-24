@@ -16,8 +16,9 @@ type Gen struct {
 	Assembly    *bytes.Buffer
 	Global      *bytes.Buffer
 
-	global [30]int
-	sp     int
+	symbolnum int
+
+	sp int
 
 	labelcnt int
 }
@@ -26,6 +27,7 @@ func New(b *compiler.Bytecode) *Gen {
 	g := &Gen{
 		constants:   b.Constants,
 		instraction: b.Instructions,
+		symbolnum:   b.SymbolNum,
 	}
 	return g
 }
@@ -40,6 +42,8 @@ func (g *Gen) Genx64() error {
 	fmt.Fprintln(g.Assembly, "main:")
 
 	fmt.Fprintln(g.Assembly, "	mov rbp, rsp")
+	// 変数分を先に引いておく
+	fmt.Fprintf(g.Assembly, "	sub rsp, %d\n", g.symbolnum*8)
 
 	for ip := 0; ip < len(g.instraction); ip++ {
 		op := code.Opcode(g.instraction[ip])
@@ -57,7 +61,6 @@ func (g *Gen) Genx64() error {
 			obj := g.constants[constIndex]
 			i := obj.(*object.Integer).Value
 			fmt.Fprintf(g.Assembly, "	push %d\n", i)
-			g.sp++
 
 		case code.OpReturnValue:
 			fmt.Fprintln(g.Assembly, "	pop rax")
@@ -69,26 +72,22 @@ func (g *Gen) Genx64() error {
 			fmt.Fprintln(g.Assembly, "	pop rax")
 			fmt.Fprintln(g.Assembly, "	add rax, rbx")
 			fmt.Fprintln(g.Assembly, "	push rax")
-			g.sp--
 		case code.OpSub:
 			fmt.Fprintln(g.Assembly, "	pop rbx")
 			fmt.Fprintln(g.Assembly, "	pop rax")
 			fmt.Fprintln(g.Assembly, "	sub rax, rbx")
 			fmt.Fprintln(g.Assembly, "	push rax")
-			g.sp--
 		case code.OpMul:
 			fmt.Fprintln(g.Assembly, "	pop rbx")
 			fmt.Fprintln(g.Assembly, "	pop rax")
 			fmt.Fprintln(g.Assembly, "	imul rbx")
 			fmt.Fprintln(g.Assembly, "	push rax")
-			g.sp--
 		case code.OpDiv:
 			fmt.Fprintln(g.Assembly, "	pop rbx")
 			fmt.Fprintln(g.Assembly, "	pop rax")
 			fmt.Fprintln(g.Assembly, "	cdq")
 			fmt.Fprintln(g.Assembly, "	idiv rbx")
 			fmt.Fprintln(g.Assembly, "	push rax")
-			g.sp--
 		case code.OpMinus:
 			fmt.Fprintln(g.Assembly, "	mov rax, 0")
 			fmt.Fprintln(g.Assembly, "	pop rbx")
@@ -101,7 +100,6 @@ func (g *Gen) Genx64() error {
 			// cmp命令でZFを立てるのではなく、sub演算の結果をstackに積む
 			fmt.Fprintln(g.Assembly, "	sub rax, rbx")
 			fmt.Fprintln(g.Assembly, "	push rax")
-			g.sp--
 		case code.OpNotEqual:
 			// Trueだったら0以外、それ以外は0をpush
 			fmt.Fprintln(g.Assembly, "	pop rax")
@@ -116,25 +114,22 @@ func (g *Gen) Genx64() error {
 			fmt.Fprintln(g.Assembly, "	push 0")
 			fmt.Fprintf(g.Assembly, ".LABEL%d:\n", g.labelcnt+1)
 			g.labelcnt += 2
-			g.sp--
 
 		case code.OpSetGlobal:
 			globalIndex := code.ReadUint16(g.instraction[ip+1:])
 			ip += 2
-			g.global[globalIndex] = g.sp
+			fmt.Fprintln(g.Assembly, "	pop rax")
+			fmt.Fprintf(g.Assembly, "	mov [rbp-%d] ,rax\n", (globalIndex+1)*8)
 
 		case code.OpGetGlobal:
 			globalIndex := code.ReadUint16(g.instraction[ip+1:])
 			ip += 2
-			sp := g.global[globalIndex]
 
-			fmt.Fprintf(g.Assembly, "	mov rax, [rbp-%d]\n", sp*8)
+			fmt.Fprintf(g.Assembly, "	mov rax, [rbp-%d]\n", (globalIndex+1)*8)
 			fmt.Fprintln(g.Assembly, "	push rax")
-			g.sp++
 
 		case code.OpNull:
 			fmt.Fprintln(g.Assembly, "	push 0")
-			g.sp++
 
 		case code.OpJump:
 			fmt.Fprintf(g.Assembly, "	jmp .LABEL%d\n", g.labelcnt)
@@ -155,11 +150,9 @@ func (g *Gen) Genx64() error {
 
 			g.labelcnt++
 			ip += 2
-			g.sp--
 
 		case code.OpPop:
 			fmt.Fprintln(g.Assembly, "	pop rax")
-			g.sp--
 
 		default:
 			return fmt.Errorf("non-supported opcode")

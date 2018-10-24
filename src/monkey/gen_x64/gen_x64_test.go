@@ -98,6 +98,11 @@ func TestGenerator(t *testing.T) {
 			input:    `if (1 == 2) { return 10 } else { return 20 };`,
 			expected: 20,
 		},
+		//{
+		//	input:    `if (3 == 2) { return 10 }; let a = 1; return a;`,
+		//	expected: 1,
+		//},
+
 	}
 
 	for _, tt := range tests {
@@ -113,7 +118,6 @@ func TestGenerator(t *testing.T) {
 
 		// compile(x86 code generation)
 		g := New(comp.Bytecode())
-		fmt.Println(g.instraction)
 
 		err = g.Genx64()
 		if err != nil {
@@ -160,13 +164,13 @@ func TestGenerator(t *testing.T) {
 		}
 
 		//debug
-		fmt.Println("======================")
-		fmt.Println(tt.input)
-		fmt.Println("---")
-		fmt.Println(g.instraction)
-		fmt.Println("---")
-		fmt.Println(g.Assembly.String())
-		fmt.Println("======================")
+		//fmt.Println("======================")
+		//fmt.Println(tt.input)
+		//fmt.Println("---")
+		//fmt.Println(g.instraction)
+		//fmt.Println("---")
+		//fmt.Println(g.Assembly.String())
+		//fmt.Println("======================")
 
 	}
 
