@@ -43,6 +43,14 @@ func TestGenerator(t *testing.T) {
 			input:    `return 10 / 3`,
 			expected: 3,
 		},
+		{
+			input:    `let a = 3; return a;`,
+			expected: 3,
+		},
+		{
+			input:    `let a = 3; let b = 1; return a;`,
+			expected: 3,
+		},
 	}
 
 	for _, tt := range tests {
@@ -64,6 +72,7 @@ func TestGenerator(t *testing.T) {
 		}
 
 		// write tmp file
+		os.Remove("/tmp/monkeytmp.s")
 		f, err := os.OpenFile("/tmp/monkeytmp.s", os.O_RDWR|os.O_CREATE, 0644)
 		if err != nil {
 			t.Errorf(err.Error())
@@ -75,6 +84,7 @@ func TestGenerator(t *testing.T) {
 		cmd := exec.Command("/usr/bin/gcc", "/tmp/monkeytmp.s", "-o", "/tmp/monkeytmp")
 		err = cmd.Run()
 		if err != nil {
+			fmt.Println(g.instraction)
 			fmt.Println(g.Assembly.String())
 			t.Errorf("gcc error")
 		}
@@ -94,6 +104,7 @@ func TestGenerator(t *testing.T) {
 		}
 
 		if returncode != tt.expected {
+			fmt.Println(tt.input)
 			fmt.Println(g.instraction)
 			fmt.Println(g.Assembly.String())
 			t.Errorf("return code is different got=%d, expected=%d", returncode, tt.expected)
@@ -101,8 +112,8 @@ func TestGenerator(t *testing.T) {
 	}
 
 	// delete gabages
-	os.Remove("/tmp/monkeytmp.s")
 	os.Remove("/tmp/mokeytmp")
+
 }
 
 func parse(input string) *ast.Program {
