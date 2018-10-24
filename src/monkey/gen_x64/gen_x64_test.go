@@ -35,6 +35,14 @@ func TestGenerator(t *testing.T) {
 			input:    `return 5 * 3`,
 			expected: 15,
 		},
+		{
+			input:    `return 9 / 3`,
+			expected: 3,
+		},
+		{
+			input:    `return 10 / 3`,
+			expected: 3,
+		},
 	}
 
 	for _, tt := range tests {

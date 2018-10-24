@@ -59,6 +59,12 @@ func (g *Gen) Genx64() error {
 			fmt.Fprintln(g.Assembly, "	pop rax")
 			fmt.Fprintln(g.Assembly, "	imul rbx")
 			fmt.Fprintln(g.Assembly, "	push rax")
+		case code.OpDiv:
+			fmt.Fprintln(g.Assembly, "	pop rbx")
+			fmt.Fprintln(g.Assembly, "	pop rax")
+			fmt.Fprintln(g.Assembly, "	cdq")
+			fmt.Fprintln(g.Assembly, "	idiv rbx")
+			fmt.Fprintln(g.Assembly, "	push rax")
 		}
 	}
 
