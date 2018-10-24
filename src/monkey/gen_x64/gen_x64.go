@@ -64,6 +64,7 @@ func (g *Gen) Genx64() error {
 			fmt.Fprintln(g.Assembly, "	pop rax")
 			fmt.Fprintln(g.Assembly, "	sub rax, rbx")
 			fmt.Fprintln(g.Assembly, "	push rax")
+			g.sp--
 		case code.OpMul:
 			fmt.Fprintln(g.Assembly, "	pop rbx")
 			fmt.Fprintln(g.Assembly, "	pop rax")
@@ -82,7 +83,13 @@ func (g *Gen) Genx64() error {
 			fmt.Fprintln(g.Assembly, "	pop rbx")
 			fmt.Fprintln(g.Assembly, "	sub rax, rbx")
 			fmt.Fprintln(g.Assembly, "	push rax")
-
+		case code.OpEqual:
+			fmt.Fprintln(g.Assembly, "	pop rax")
+			fmt.Fprintln(g.Assembly, "	pop rbx")
+			// cmp命令でZFを立てるのではなく、sub演算の結果をstackに積む
+			fmt.Fprintln(g.Assembly, "	sub rax, rbx")
+			fmt.Fprintln(g.Assembly, "	push rax")
+			g.sp--
 		case code.OpSetGlobal:
 			globalIndex := code.ReadUint16(g.instraction[ip+1:])
 			ip += 2
