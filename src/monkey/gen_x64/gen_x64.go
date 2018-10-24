@@ -58,11 +58,12 @@ func (g *Gen) Genx64() error {
 			i := obj.(*object.Integer).Value
 			fmt.Fprintf(g.Assembly, "	push %d\n", i)
 			g.sp++
+
 		case code.OpReturnValue:
 			fmt.Fprintln(g.Assembly, "	pop rax")
 			fmt.Fprintln(g.Assembly, "	mov rsp, rbp")
 			fmt.Fprintln(g.Assembly, "	ret")
-			g.sp = 0
+
 		case code.OpAdd:
 			fmt.Fprintln(g.Assembly, "	pop rbx")
 			fmt.Fprintln(g.Assembly, "	pop rax")
@@ -129,9 +130,11 @@ func (g *Gen) Genx64() error {
 
 			fmt.Fprintf(g.Assembly, "	mov rax, [rbp-%d]\n", sp*8)
 			fmt.Fprintln(g.Assembly, "	push rax")
+			g.sp++
 
 		case code.OpNull:
 			fmt.Fprintln(g.Assembly, "	push 0")
+			g.sp++
 
 		case code.OpJump:
 			fmt.Fprintf(g.Assembly, "	jmp .LABEL%d\n", g.labelcnt)
@@ -152,9 +155,11 @@ func (g *Gen) Genx64() error {
 
 			g.labelcnt++
 			ip += 2
+			g.sp--
 
 		case code.OpPop:
 			fmt.Fprintln(g.Assembly, "	pop rax")
+			g.sp--
 
 		default:
 			return fmt.Errorf("non-supported opcode")
