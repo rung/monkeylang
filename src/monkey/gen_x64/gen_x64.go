@@ -8,6 +8,8 @@ import (
 	"monkey/object"
 )
 
+var reserveLabel = make(map[int]int)
+
 type Gen struct {
 	constants   []object.Object
 	instraction code.Instructions
@@ -41,6 +43,12 @@ func (g *Gen) Genx64() error {
 
 	for ip := 0; ip < len(g.instraction); ip++ {
 		op := code.Opcode(g.instraction[ip])
+
+		l, ok := reserveLabel[ip]
+		if ok {
+			fmt.Fprintf(g.Assembly, ".LABEL%d:\n", l)
+		}
+
 		switch op {
 		case code.OpConstant:
 			constIndex := code.ReadUint16(g.instraction[ip+1:])
@@ -121,8 +129,43 @@ func (g *Gen) Genx64() error {
 
 			fmt.Fprintf(g.Assembly, "	mov rax, [rbp-%d]\n", sp*8)
 			fmt.Fprintln(g.Assembly, "	push rax")
+
+		case code.OpNull:
+			fmt.Fprintln(g.Assembly, "	push 0")
+
+		case code.OpJump:
+			fmt.Fprintf(g.Assembly, "	jmp .LABEL%d\n", g.labelcnt)
+			bytecodeNo := int(code.ReadUint16(g.instraction[ip+1:]))
+
+			pushLabel(g.labelcnt, bytecodeNo)
+
+			g.labelcnt++
+			ip += 2
+
+		case code.OpJumpNotTruthy:
+			fmt.Fprintln(g.Assembly, "	pop rax")
+			fmt.Fprintln(g.Assembly, "	cmp rax, 0")
+			fmt.Fprintf(g.Assembly, "	jne .LABEL%d\n", g.labelcnt)
+			bytecodeNo := int(code.ReadUint16(g.instraction[ip+1:]))
+
+			pushLabel(g.labelcnt, bytecodeNo)
+
+			g.labelcnt++
+			ip += 2
+
+		case code.OpPop:
+			fmt.Fprintln(g.Assembly, "	pop rax")
+
+		default:
+			return fmt.Errorf("non-supported opcode")
 		}
 	}
 
 	return nil
+}
+
+// 指定したbytecodeのline noの箇所に、ラベルを吐く
+func pushLabel(labelcnt, b_line int) {
+	reserveLabel[b_line] = labelcnt
+	return
 }

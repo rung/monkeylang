@@ -85,6 +85,19 @@ func TestGenerator(t *testing.T) {
 			input:    `let b = (3 != 4); return b`,
 			expected: 0,
 		},
+		// if-else
+		{
+			input:    `if (1 == 1) { return 10 }; return 0;`,
+			expected: 10,
+		},
+		{
+			input:    `if (1 != 2) { return 10}; return 0;`,
+			expected: 10,
+		},
+		{
+			input:    `if (1 == 2) { return 10 } else { return 20 };`,
+			expected: 20,
+		},
 	}
 
 	for _, tt := range tests {
@@ -100,6 +113,8 @@ func TestGenerator(t *testing.T) {
 
 		// compile(x86 code generation)
 		g := New(comp.Bytecode())
+		fmt.Println(g.instraction)
+
 		err = g.Genx64()
 		if err != nil {
 			t.Errorf("code generation error: %s", err)
@@ -144,14 +159,14 @@ func TestGenerator(t *testing.T) {
 			t.Errorf("return code is different got=%d, expected=%d", returncode, tt.expected)
 		}
 
-		// debug
-		//fmt.Println("======================")
-		//fmt.Println(tt.input)
-		//fmt.Println("---")
-		//fmt.Println(g.instraction)
-		//fmt.Println("---")
-		//fmt.Println(g.Assembly.String())
-		//fmt.Println("======================")
+		//debug
+		fmt.Println("======================")
+		fmt.Println(tt.input)
+		fmt.Println("---")
+		fmt.Println(g.instraction)
+		fmt.Println("---")
+		fmt.Println(g.Assembly.String())
+		fmt.Println("======================")
 
 	}
 
