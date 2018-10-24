@@ -51,6 +51,10 @@ func TestGenerator(t *testing.T) {
 			input:    `let a = 3; let b = 1; return a;`,
 			expected: 3,
 		},
+		{
+			input:    `let a = 2; let b = 5; return b;`,
+			expected: 5,
+		},
 	}
 
 	for _, tt := range tests {
@@ -109,11 +113,20 @@ func TestGenerator(t *testing.T) {
 			fmt.Println(g.Assembly.String())
 			t.Errorf("return code is different got=%d, expected=%d", returncode, tt.expected)
 		}
+
+		// debug
+		//fmt.Println("======================")
+		//fmt.Println(tt.input)
+		//fmt.Println("---")
+		//fmt.Println(g.instraction)
+		//fmt.Println("---")
+		//fmt.Println(g.Assembly.String())
+		//fmt.Println("======================")
+
 	}
 
 	// delete gabages
 	os.Remove("/tmp/mokeytmp")
-
 }
 
 func parse(input string) *ast.Program {
