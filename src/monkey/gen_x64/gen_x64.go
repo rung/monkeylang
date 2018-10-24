@@ -77,6 +77,11 @@ func (g *Gen) Genx64() error {
 			fmt.Fprintln(g.Assembly, "	idiv rbx")
 			fmt.Fprintln(g.Assembly, "	push rax")
 			g.sp--
+		case code.OpMinus:
+			fmt.Fprintln(g.Assembly, "	mov rax, 0")
+			fmt.Fprintln(g.Assembly, "	pop rbx")
+			fmt.Fprintln(g.Assembly, "	sub rax, rbx")
+			fmt.Fprintln(g.Assembly, "	push rax")
 
 		case code.OpSetGlobal:
 			globalIndex := code.ReadUint16(g.instraction[ip+1:])
