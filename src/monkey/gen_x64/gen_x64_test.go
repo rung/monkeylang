@@ -108,7 +108,7 @@ func TestGenerator(t *testing.T) {
 				t.Errorf("can't get return code")
 			}
 		} else {
-			returncode = 1
+			returncode = 0
 		}
 
 		if returncode != tt.expected {
