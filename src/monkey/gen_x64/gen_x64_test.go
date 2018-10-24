@@ -19,22 +19,27 @@ type testCase struct {
 
 func TestGenerator(t *testing.T) {
 	tests := []testCase{
+		// Integer
 		{
 			input:    `return 1`,
 			expected: 1,
 		},
+		// Add
 		{
 			input:    `return 1 + 1`,
 			expected: 2,
 		},
+		// Sub
 		{
 			input:    `return 5 - 1`,
 			expected: 4,
 		},
+		// Mul
 		{
 			input:    `return 5 * 3`,
 			expected: 15,
 		},
+		// Div
 		{
 			input:    `return 9 / 3`,
 			expected: 3,
@@ -43,6 +48,7 @@ func TestGenerator(t *testing.T) {
 			input:    `return 10 / 3`,
 			expected: 3,
 		},
+		// global binding
 		{
 			input:    `let a = 3; return a;`,
 			expected: 3,
@@ -55,12 +61,28 @@ func TestGenerator(t *testing.T) {
 			input:    `let a = 2; let b = 5; return b;`,
 			expected: 5,
 		},
+		// Minus
 		{
 			input:    `return -2 + 4`,
 			expected: 2,
 		},
+		// Equal
 		{
 			input:    `let b = (3 == 3); return b`,
+			expected: 0,
+		},
+		//   Equalは4-3した結果をそのっまpushする
+		{
+			input:    `let b = (4 == 3); return b`,
+			expected: 1,
+		},
+		// Not Equal
+		{
+			input:    `let b = (3 != 3); return b`,
+			expected: 1,
+		},
+		{
+			input:    `let b = (3 != 4); return b`,
 			expected: 0,
 		},
 	}

@@ -16,6 +16,8 @@ type Gen struct {
 
 	global [30]int
 	sp     int
+
+	labelcnt int
 }
 
 func New(b *compiler.Bytecode) *Gen {
@@ -84,12 +86,29 @@ func (g *Gen) Genx64() error {
 			fmt.Fprintln(g.Assembly, "	sub rax, rbx")
 			fmt.Fprintln(g.Assembly, "	push rax")
 		case code.OpEqual:
-			fmt.Fprintln(g.Assembly, "	pop rax")
+			// Trueだったら0, それ以外は0以外をpush
 			fmt.Fprintln(g.Assembly, "	pop rbx")
+			fmt.Fprintln(g.Assembly, "	pop rax")
 			// cmp命令でZFを立てるのではなく、sub演算の結果をstackに積む
 			fmt.Fprintln(g.Assembly, "	sub rax, rbx")
 			fmt.Fprintln(g.Assembly, "	push rax")
 			g.sp--
+		case code.OpNotEqual:
+			// Trueだったら0以外、それ以外は0をpush
+			fmt.Fprintln(g.Assembly, "	pop rax")
+			fmt.Fprintln(g.Assembly, "	pop rbx")
+			// cmp命令でZFを立てるのではなく、sub演算の結果をstackに積む
+			fmt.Fprintln(g.Assembly, "	cmp rax, rbx")
+			// rax, rbxが一致しなかったら0をpush
+			fmt.Fprintf(g.Assembly, "	jne .LABEL%d\n", g.labelcnt)
+			fmt.Fprintln(g.Assembly, "	push 1")
+			fmt.Fprintf(g.Assembly, "	jmp .LABEL%d\n", g.labelcnt+1)
+			fmt.Fprintf(g.Assembly, ".LABEL%d:\n", g.labelcnt)
+			fmt.Fprintln(g.Assembly, "	push 0")
+			fmt.Fprintf(g.Assembly, ".LABEL%d:\n", g.labelcnt+1)
+			g.labelcnt += 2
+			g.sp--
+
 		case code.OpSetGlobal:
 			globalIndex := code.ReadUint16(g.instraction[ip+1:])
 			ip += 2
