@@ -124,10 +124,10 @@ func TestGenerator(t *testing.T) {
 			input:    `if (3 == 2) { return 10 }; let a = 1; return a;`,
 			expected: 1,
 		},
-		//{
-		//	input:    `let a = fn(){ return 1; }; return a();`,
-		//	expected: 1,
-		//},
+		{
+			input:    `let a = fn(){ return 1; }; return a()`,
+			expected: 1,
+		},
 	}
 
 	for _, tt := range tests {
@@ -145,6 +145,7 @@ func TestGenerator(t *testing.T) {
 		g := New(comp.Bytecode())
 
 		err = g.Genx64()
+
 		if err != nil {
 			t.Errorf("code generation error: %s", err)
 		}
@@ -155,7 +156,7 @@ func TestGenerator(t *testing.T) {
 		if err != nil {
 			t.Errorf(err.Error())
 		}
-		f.Write(g.currentFrame().Assembly.Bytes())
+		f.Write(g.Assembly().Bytes())
 		f.Close()
 
 		// change Assembly to machine code and link.
@@ -163,7 +164,7 @@ func TestGenerator(t *testing.T) {
 		err = cmd.Run()
 		if err != nil {
 			fmt.Println(g.currentFrame().instraction)
-			fmt.Println(g.currentFrame().Assembly.String())
+			fmt.Println(g.Assembly().String())
 			t.Errorf("gcc error")
 		}
 		cmd = exec.Command("/tmp/monkeytmp")
@@ -174,7 +175,7 @@ func TestGenerator(t *testing.T) {
 			if s, ok := err.(*exec.ExitError).Sys().(syscall.WaitStatus); ok {
 				returncode = s.ExitStatus()
 			} else {
-				fmt.Println(g.currentFrame().Assembly.String())
+				fmt.Println(g.Assembly().String())
 				t.Errorf("can't get return code")
 			}
 		} else {
@@ -184,7 +185,7 @@ func TestGenerator(t *testing.T) {
 		if returncode != tt.expected {
 			fmt.Println(tt.input)
 			fmt.Println(g.currentFrame().instraction)
-			fmt.Println(g.currentFrame().Assembly.String())
+			fmt.Println(g.Assembly().String())
 			t.Errorf("return code is different got=%d, expected=%d", returncode, tt.expected)
 		}
 

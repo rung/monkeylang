@@ -16,8 +16,9 @@ type Gen struct {
 
 	labelcnt int
 
-	frame []*Frame
-	fcnt  int
+	frame  []*Frame
+	fcnt   int
+	fIndex map[int]int
 }
 
 type Frame struct {
@@ -30,12 +31,13 @@ func (g *Gen) currentFrame() *Frame {
 	return g.frame[g.fcnt]
 }
 
-func (g *Gen) pushFrame(obj *object.CompiledFunction) {
+func (g *Gen) pushFrame(obj *object.CompiledFunction, constIndex int) {
 	f := &Frame{
 		instraction: obj.Instructions,
 		symbolnum:   obj.NumLocals,
 	}
 	g.fcnt++
+	g.fIndex[constIndex] = g.fcnt
 	g.frame = append(g.frame, f)
 }
 
@@ -54,20 +56,40 @@ func New(b *compiler.Bytecode) *Gen {
 		constants: b.Constants,
 		frame:     []*Frame{f},
 		fcnt:      0,
+		fIndex:    make(map[int]int),
 	}
 	return g
+}
+
+func (g *Gen) Assembly() *bytes.Buffer {
+	b := &bytes.Buffer{}
+
+	// write header
+	fmt.Fprintln(b, ".intel_syntax noprefix\n")
+	fmt.Fprintln(b, ".text")
+
+	// write function
+	for i := 0; i <= g.fcnt; i++ {
+		fmt.Fprintln(b, g.frame[i].Assembly.String())
+	}
+
+	return b
 }
 
 func (g *Gen) Genx64() error {
 	cf := g.currentFrame()
 	cf.Assembly = &bytes.Buffer{}
+	currentFCnt := g.fcnt
 
-	// write header
-	fmt.Fprintln(cf.Assembly, ".intel_syntax noprefix\n")
-	fmt.Fprintln(cf.Assembly, ".text")
-	fmt.Fprintln(cf.Assembly, ".global main")
-	fmt.Fprintln(cf.Assembly, "main:")
+	if currentFCnt == 0 {
+		fmt.Fprintln(cf.Assembly, ".global main")
+		fmt.Fprintln(cf.Assembly, "main:")
+	} else {
+		fmt.Fprintf(cf.Assembly, ".global function%d\n", currentFCnt)
+		fmt.Fprintf(cf.Assembly, "function%d:\n", currentFCnt)
+	}
 
+	fmt.Fprintln(cf.Assembly, "	push rbp")
 	fmt.Fprintln(cf.Assembly, "	mov rbp, rsp")
 	// 変数分を先に引いておく
 	fmt.Fprintf(cf.Assembly, "	sub rsp, %d\n", cf.symbolnum*8)
@@ -92,6 +114,7 @@ func (g *Gen) Genx64() error {
 		case code.OpReturnValue:
 			fmt.Fprintln(cf.Assembly, "	pop rax")
 			fmt.Fprintln(cf.Assembly, "	mov rsp, rbp")
+			fmt.Fprintln(cf.Assembly, "	pop rbp")
 			fmt.Fprintln(cf.Assembly, "	ret")
 
 		case code.OpAdd:
@@ -193,15 +216,25 @@ func (g *Gen) Genx64() error {
 		case code.OpPop:
 			fmt.Fprintln(cf.Assembly, "	pop rax")
 
-		//case code.OpClosure:
-		//	constIndex := code.ReadUint16(ins[ip+1:])
-		//	numFree := code.ReadUint8(ins[ip+3:])
-		//	ip += 3
-		//
-		//	err := g.pushClosure(int(constIndex), int(numFree))
-		//	if err != nil {
-		//		return nil
-		//	}
+		case code.OpClosure:
+			constIndex := code.ReadUint16(cf.instraction[ip+1:])
+			numFree := code.ReadUint8(cf.instraction[ip+3:])
+			ip += 3
+
+			err := g.pushClosure(int(constIndex), int(numFree))
+			if err != nil {
+				return nil
+			}
+			fmt.Fprintf(cf.Assembly, "	lea rax, function%d[rip]\n", g.fcnt)
+			fmt.Fprintln(cf.Assembly, "	push rax")
+
+		case code.OpCall:
+			_ = code.ReadUint8(cf.instraction[ip+1:])
+			ip += 1
+
+			fmt.Fprintln(cf.Assembly, "	pop rax")
+			fmt.Fprintln(cf.Assembly, "	call rax")
+			fmt.Fprintln(cf.Assembly, "	push rax")
 
 		default:
 			return fmt.Errorf("non-supported opcode")
@@ -223,7 +256,7 @@ func (g *Gen) pushClosure(constIndex int, numFree int) error {
 	if !ok {
 		return fmt.Errorf("not a function: %+v", constant)
 	}
-	err := g.writeFunction(function)
+	err := g.writeFunction(function, constIndex)
 	if err != nil {
 		fmt.Errorf("writing function error: %+v", err)
 	}
@@ -231,6 +264,8 @@ func (g *Gen) pushClosure(constIndex int, numFree int) error {
 	return nil
 }
 
-func (g *Gen) writeFunction(function *object.CompiledFunction) error {
-	return nil
+func (g *Gen) writeFunction(f *object.CompiledFunction, constIndex int) error {
+	g.pushFrame(f, constIndex)
+	err := g.Genx64()
+	return err
 }
