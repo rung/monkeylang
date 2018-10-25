@@ -85,6 +85,24 @@ func TestGenerator(t *testing.T) {
 			input:    `let b = (3 != 4); return b`,
 			expected: 0,
 		},
+		// less/more than
+		{
+			input:    `let b = (3 < 4); return b`,
+			expected: 0,
+		},
+		{
+			input:    `let b = (5 < 4); return b`,
+			expected: 1,
+		},
+		{
+			input:    `let b = (4 > 3); return b`,
+			expected: 0,
+		},
+
+		{
+			input:    `let b = (4 > 5); return b`,
+			expected: 1,
+		},
 		// if-else
 		{
 			input:    `if (1 == 1) { return 10 }; return 0;`,
@@ -98,11 +116,10 @@ func TestGenerator(t *testing.T) {
 			input:    `if (1 == 2) { return 10 } else { return 20 };`,
 			expected: 20,
 		},
-		//{
-		//	input:    `if (3 == 2) { return 10 }; let a = 1; return a;`,
-		//	expected: 1,
-		//},
-
+		{
+			input:    `if (3 == 2) { return 10 }; let a = 1; return a;`,
+			expected: 1,
+		},
 	}
 
 	for _, tt := range tests {

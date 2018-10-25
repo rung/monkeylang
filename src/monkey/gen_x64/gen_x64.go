@@ -115,6 +115,18 @@ func (g *Gen) Genx64() error {
 			fmt.Fprintf(g.Assembly, ".LABEL%d:\n", g.labelcnt+1)
 			g.labelcnt += 2
 
+		case code.OpGreaterThan:
+			fmt.Fprintln(g.Assembly, "	pop rbx")
+			fmt.Fprintln(g.Assembly, "	pop rax")
+			fmt.Fprintln(g.Assembly, "	cmp rax, rbx")
+			fmt.Fprintf(g.Assembly, "	jle .LABEL%d\n", g.labelcnt)
+			fmt.Fprintln(g.Assembly, "	push 0")
+			fmt.Fprintf(g.Assembly, "	jmp .LABEL%d\n", g.labelcnt+1)
+			fmt.Fprintf(g.Assembly, ".LABEL%d:\n", g.labelcnt)
+			fmt.Fprintln(g.Assembly, "	push 1")
+			fmt.Fprintf(g.Assembly, ".LABEL%d:\n", g.labelcnt+1)
+			g.labelcnt += 2
+
 		case code.OpSetGlobal:
 			globalIndex := code.ReadUint16(g.instraction[ip+1:])
 			ip += 2
