@@ -39,7 +39,7 @@ func main() {
 	}
 
 	// write to standard output
-	fmt.Println(g.Assembly.String())
+	fmt.Println(g.Assembly().String())
 }
 
 func parse(input string) *ast.Program {
