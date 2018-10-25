@@ -117,6 +117,10 @@ func TestGenerator(t *testing.T) {
 			expected: 20,
 		},
 		{
+			input:    `if (1 > 2) { return 10 } else { return 20};`,
+			expected: 20,
+		},
+		{
 			input:    `if (3 == 2) { return 10 }; let a = 1; return a;`,
 			expected: 1,
 		},
