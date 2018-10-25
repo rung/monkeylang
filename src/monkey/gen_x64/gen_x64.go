@@ -183,9 +183,22 @@ func (g *Gen) Genx64() error {
 			fmt.Fprintln(cf.Assembly, "	pop rax")
 			fmt.Fprintf(cf.Assembly, "	mov [rbp-%d] ,rax\n", (globalIndex+1)*8)
 
+		case code.OpSetLocal:
+			globalIndex := code.ReadUint8(cf.instraction[ip+1:])
+			ip += 1
+			fmt.Fprintln(cf.Assembly, "	pop rax")
+			fmt.Fprintf(cf.Assembly, "	mov [rbp-%d] ,rax\n", (globalIndex+1)*8)
+
 		case code.OpGetGlobal:
 			globalIndex := code.ReadUint16(cf.instraction[ip+1:])
 			ip += 2
+
+			fmt.Fprintf(cf.Assembly, "	mov rax, [rbp-%d]\n", (globalIndex+1)*8)
+			fmt.Fprintln(cf.Assembly, "	push rax")
+
+		case code.OpGetLocal:
+			globalIndex := code.ReadUint8(cf.instraction[ip+1:])
+			ip += 1
 
 			fmt.Fprintf(cf.Assembly, "	mov rax, [rbp-%d]\n", (globalIndex+1)*8)
 			fmt.Fprintln(cf.Assembly, "	push rax")

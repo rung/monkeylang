@@ -124,9 +124,15 @@ func TestGenerator(t *testing.T) {
 			input:    `if (3 == 2) { return 10 }; let a = 1; return a;`,
 			expected: 1,
 		},
+		// function
 		{
 			input:    `let a = fn(){ return 1; }; return a()`,
 			expected: 1,
+		},
+
+		{
+			input:    `let a = fn(){ let a = 1; return a + 5; }; return a()`,
+			expected: 6,
 		},
 	}
 
