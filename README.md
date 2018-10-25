@@ -7,43 +7,117 @@ This is Monkey language interpreter and compiler from Thorsten Ball's book.
   - now, it doesn't almost use registers. 
 
 #### example
-```
-$ cat sample/sample.mk 
-let a = 2;
-let b = 3;
-let c = a * b / 2 ;
+```bash
+$ cat sample/function.mk 
+let a = 1;
 
-return c;
-$ 
-$ ./x64_gen sample/sample.mk | head -20
+let fnA = fn() {
+	let c = 3;
+	return c;
+}
+
+let fnB = fn() {
+	let c = 6;
+	return c;
+}
+
+return a + fnA() + fnB()
+```
+
+<details>
+<summary>x64 assembly code</summary>
+<pre>
+<code>
+
+$ ./x64_gen sample/function.mk
 .intel_syntax noprefix
 
 .text
 .global main
 main:
+	push rbp
 	mov rbp, rsp
-	push 2
-	push 3
+	sub rsp, 24
+	push 1
+	pop rax
+	mov [rbp-8] ,rax
+	lea rax, function1[rip]
+	push rax
+	pop rax
+	mov [rbp-16] ,rax
+	lea rax, function2[rip]
+	push rax
+	pop rax
+	mov [rbp-24] ,rax
 	mov rax, [rbp-8]
 	push rax
 	mov rax, [rbp-16]
 	push rax
-	pop rbx
 	pop rax
-	imul rbx
+	call rax
 	push rax
-	push 2
 	pop rbx
 	pop rax
-	cdq
-$ 
-$ 
-$ ./x64_gen sample/sample.mk > /tmp/t.s; gcc /tmp/t.s 
-$ ./a.out 
-$ echo $?
-2
+	add rax, rbx
+	push rax
+	mov rax, [rbp-24]
+	push rax
+	pop rax
+	call rax
+	push rax
+	pop rbx
+	pop rax
+	add rax, rbx
+	push rax
+	pop rax
+	mov rsp, rbp
+	pop rbp
+	ret
+
+.global function1
+function1:
+	push rbp
+	mov rbp, rsp
+	sub rsp, 8
+	push 3
+	pop rax
+	mov [rbp-8] ,rax
+	mov rax, [rbp-8]
+	push rax
+	pop rax
+	mov rsp, rbp
+	pop rbp
+	ret
+
+.global function2
+function2:
+	push rbp
+	mov rbp, rsp
+	sub rsp, 8
+	push 6
+	pop rax
+	mov [rbp-8] ,rax
+	mov rax, [rbp-8]
+	push rax
+	pop rax
+	mov rsp, rbp
+	pop rbp
+	ret
+
+
 $ 
 
+</code>
+</pre>
+</details>
+
+
+
+```bash
+$ ./x64_gen sample/function.mk > /tmp/t.s; gcc /tmp/t.s; ./a.out
+$ echo $?
+10
+$ 
 ```
 
 ### Reference
