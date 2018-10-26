@@ -170,7 +170,10 @@ func TestGenerator(t *testing.T) {
 	
 					let f =  a(2, 3);
 					let g =  a(2, 3);
-					return e + f + g;
+					if (f == g) {
+						return e + f + g;
+					}
+					return 0;
 					`,
 			expected: 25,
 		},
