@@ -160,6 +160,20 @@ func TestGenerator(t *testing.T) {
 			input:    `let a = fn(b, c){ return b + c; } return a(2, 8);`,
 			expected: 10,
 		},
+		{
+			input: `let a = fn(b, c){ 
+					  	let d = 5;
+						return b + c + d;
+					}
+
+					let e = 5;
+	
+					let f =  a(2, 3);
+					let g =  a(2, 3);
+					return e + f + g;
+					`,
+			expected: 25,
+		},
 	}
 
 	for _, tt := range tests {
