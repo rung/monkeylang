@@ -71,7 +71,7 @@ func TestGenerator(t *testing.T) {
 			input:    `let b = (3 == 3); return b`,
 			expected: 0,
 		},
-		//   Equalは4-3した結果をそのっまpushする
+		//   Equalは4-3した結果をそのままpushする
 		{
 			input:    `let b = (4 == 3); return b`,
 			expected: 1,
@@ -149,6 +149,15 @@ func TestGenerator(t *testing.T) {
 
 				return a + fnA() + fnB()
 			`,
+			expected: 10,
+		},
+		// function with parameter
+		{
+			input:    `let a = fn(b){ return b; } return a(5);`,
+			expected: 5,
+		},
+		{
+			input:    `let a = fn(b, c){ return b + c; } return a(2, 8);`,
 			expected: 10,
 		},
 	}
