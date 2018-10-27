@@ -12,13 +12,13 @@ import (
 	"testing"
 )
 
-type testCase struct {
+type integerTestCase struct {
 	input    string
 	expected int
 }
 
 func TestGenerator(t *testing.T) {
-	tests := []testCase{
+	tests := []integerTestCase{
 		// Integer
 		{
 			input:    `return 1`,
@@ -253,8 +253,48 @@ func TestGenerator(t *testing.T) {
 	os.Remove("/tmp/mokeytmp")
 }
 
+type stringTestCase struct {
+	input    string
+	expected int
+}
+
+//func TestString(t *testing.T) {
+//	tests := []stringTestCase{
+//		{
+//			input: `puts("hello world!")`,
+//			expected: `hello world!`
+//		},
+//	}
+//
+//}
+
 func parse(input string) *ast.Program {
 	l := lexer.New(input)
 	p := parser.New(l)
 	return p.ParseProgram()
+}
+
+func TestAddString(t *testing.T) {
+	// parse
+	program := parse(`puts("hello world")`)
+
+	// compile(to bytecode)
+	comp := compiler.New()
+	err := comp.Compile(program)
+	if err != nil {
+		t.Fatalf("compiler error: %s", err)
+	}
+
+	// compile(x86 code generation)
+	g := New(comp.Bytecode())
+	g.addString("hello world", 1)
+
+	expected := `.STRGBL1
+	.string "hello world"
+`
+
+	if g.Global.String() != expected {
+		t.Errorf("add string error: \ngot=%s, \nexpected=%s", g.Global.String(), expected)
+	}
+
 }

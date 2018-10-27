@@ -12,7 +12,7 @@ var reserveLabel = make(map[int]int)
 
 type Gen struct {
 	constants []object.Object
-	//Global    *bytes.Buffer
+	Global    *bytes.Buffer
 
 	labelcnt int
 
@@ -57,6 +57,7 @@ func New(b *compiler.Bytecode) *Gen {
 
 	g := &Gen{
 		constants: b.Constants,
+		Global:    &bytes.Buffer{},
 		frame:     []*Frame{f},
 		fcnt:      0,
 		fIndex:    make(map[int]int),
@@ -328,4 +329,11 @@ func (g *Gen) writeFunction(f *object.CompiledFunction, constIndex, paramNum int
 	g.pushFrame(f, constIndex, paramNum)
 	err := g.Genx64()
 	return err
+}
+
+func (g *Gen) addString(s string, index int) {
+	fmt.Fprintf(g.Global, ".STRGBL%d\n", index)
+	fmt.Fprintf(g.Global, `	.string "%s"`, s)
+	fmt.Fprintf(g.Global, "\n")
+
 }
