@@ -72,6 +72,10 @@ func (g *Gen) Assembly() *bytes.Buffer {
 	fmt.Fprintln(b, ".intel_syntax noprefix\n")
 	fmt.Fprintln(b, ".text")
 
+	// write Global binding
+	fmt.Fprintf(b, g.Global.String())
+	fmt.Fprintf(b, "\n")
+
 	// write function
 	for i := 0; i <= g.fcnt; i++ {
 		fmt.Fprintln(b, g.frame[i].Assembly.String())
@@ -153,8 +157,18 @@ func (g *Gen) Genx64() error {
 			ip += 2
 
 			obj := g.constants[constIndex]
-			i := obj.(*object.Integer).Value
-			fmt.Fprintf(cf.Assembly, "	push %d\n", i)
+
+			switch obj := obj.(type) {
+			case *object.Integer:
+				i := obj.Value
+				fmt.Fprintf(cf.Assembly, "	push %d\n", i)
+			case *object.String:
+				g.addString(obj.Value, int(constIndex))
+				fmt.Fprintf(cf.Assembly, "	push STRGBL%d\n", constIndex)
+
+			default:
+
+			}
 
 		case code.OpReturnValue:
 			fmt.Fprintln(cf.Assembly, "	pop rax")
