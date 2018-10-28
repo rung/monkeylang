@@ -73,8 +73,11 @@ func (g *Gen) Assembly() *bytes.Buffer {
 	fmt.Fprintln(b, ".text")
 
 	// write Global binding
-	fmt.Fprintf(b, g.Global.String())
-	fmt.Fprintf(b, "\n")
+	if g.Global.Len() > 0 {
+		fmt.Fprintf(b, "	.text\n	.section	.rodata")
+		fmt.Fprintf(b, g.Global.String())
+		fmt.Fprintf(b, "\n")
+	}
 
 	// write function
 	for i := 0; i <= g.fcnt; i++ {
