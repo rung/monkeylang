@@ -19,7 +19,7 @@ type Gen struct {
 	frame   []*Frame
 	fcnt    int
 	fIndex  map[int]int
-	builtin []int
+	builtin map[int]struct{}
 }
 
 type Frame struct {
@@ -62,6 +62,7 @@ func New(b *compiler.Bytecode) *Gen {
 		frame:     []*Frame{f},
 		fcnt:      0,
 		fIndex:    make(map[int]int),
+		builtin:   make(map[int]struct{}),
 	}
 	return g
 }
@@ -87,7 +88,7 @@ func (g *Gen) Assembly() *bytes.Buffer {
 	}
 
 	// write builtin
-	for _, i := range g.builtin {
+	for i, _ := range g.builtin {
 		fmt.Fprintln(b, object.Builtins[i].Assembly)
 	}
 
@@ -315,7 +316,7 @@ func (g *Gen) Genx64() error {
 			builtinIndex := code.ReadUint8(cf.instraction[ip+1:])
 			ip += 1
 
-			g.builtin = append(g.builtin, int(builtinIndex))
+			g.builtin[int(builtinIndex)] = struct{}{}
 			fmt.Fprintf(cf.Assembly, "	lea rax, %s[rip]\n", object.Builtins[builtinIndex].Name)
 			fmt.Fprintln(cf.Assembly, "	push rax")
 
