@@ -16,9 +16,10 @@ type Gen struct {
 
 	labelcnt int
 
-	frame  []*Frame
-	fcnt   int
-	fIndex map[int]int
+	frame   []*Frame
+	fcnt    int
+	fIndex  map[int]int
+	builtin []int
 }
 
 type Frame struct {
@@ -83,6 +84,11 @@ func (g *Gen) Assembly() *bytes.Buffer {
 	// write function
 	for i := 0; i <= g.fcnt; i++ {
 		fmt.Fprintln(b, g.frame[i].Assembly.String())
+	}
+
+	// write builtin
+	for _, i := range g.builtin {
+		fmt.Fprintln(b, object.Builtins[i].Assembly)
 	}
 
 	return b
@@ -302,6 +308,14 @@ func (g *Gen) Genx64() error {
 				return nil
 			}
 			fmt.Fprintf(cf.Assembly, "	lea rax, function%d[rip]\n", g.fcnt)
+			fmt.Fprintln(cf.Assembly, "	push rax")
+
+		case code.OpGetBuiltin:
+			builtinIndex := code.ReadUint8(cf.instraction[ip+1:])
+			ip += 1
+
+			g.builtin = append(g.builtin, int(builtinIndex))
+			fmt.Fprintf(cf.Assembly, "	lea rax, %s[rip]\n", object.Builtins[builtinIndex].Name)
 			fmt.Fprintln(cf.Assembly, "	push rax")
 
 		case code.OpCall:

@@ -3,12 +3,13 @@ package object
 import "fmt"
 
 var Builtins = []struct {
-	Name    string
-	Builtin *Builtin
+	Name     string
+	Builtin  *Builtin
+	Assembly string
 }{
 	{
-		"len",
-		&Builtin{
+		Name: "len",
+		Builtin: &Builtin{
 			Fn: func(args ...Object) Object {
 				if len(args) != 1 {
 					return newError("wrong number of arguments. got=%d, want=1",
@@ -28,8 +29,8 @@ var Builtins = []struct {
 		},
 	},
 	{
-		"puts",
-		&Builtin{
+		Name: "puts",
+		Builtin: &Builtin{
 			Fn: func(args ...Object) Object {
 				for _, arg := range args {
 					fmt.Println(arg.Inspect())
@@ -37,10 +38,53 @@ var Builtins = []struct {
 				return nil
 			},
 		},
+		Assembly: `.global puts
+puts:
+	#header
+	push rbp
+	mov rbp, rsp
+
+	#save register
+	push rdi
+	push rsi
+	push rdx
+	
+	#strlen start
+	xor rcx, rcx
+	sub rcx, 1
+
+	xor rax, rax
+	lea rdx, [rbp+16]
+	mov bl, [rdx]
+	cmp bl, 0
+	je .L1
+.L0:
+	add rdx, 1
+	mov bl, [rdx]
+	cmp bl, 0
+	loopne .L0
+.L1:
+	not rcx	
+	mov rdx, rcx
+	# strlen end
+
+	# write(1, "string", strlen) // printf
+	mov rax, 1
+	mov rdi, 1
+	mov rsi, rbp
+	add rsi, 16
+	syscall
+	push rax
+
+	#footar
+	mov rsp, rbp
+	pop rbp
+	ret
+`,
 	},
 	{
-		"first",
-		&Builtin{
+		Name: "first",
+		Builtin: &Builtin{
 			Fn: func(args ...Object) Object {
 				if len(args) != 1 {
 					return newError("wrong number of arguments. got=%d, want=1",
@@ -60,8 +104,8 @@ var Builtins = []struct {
 		},
 	},
 	{
-		"last",
-		&Builtin{
+		Name: "last",
+		Builtin: &Builtin{
 			Fn: func(args ...Object) Object {
 				if len(args) != 1 {
 					return newError("wrong number of arguments. got=%d, want=1",
@@ -82,8 +126,8 @@ var Builtins = []struct {
 		},
 	},
 	{
-		"rest",
-		&Builtin{
+		Name: "rest",
+		Builtin: &Builtin{
 			Fn: func(args ...Object) Object {
 				if len(args) != 1 {
 					return newError("wrong number of arguments. got=%d, want=1",
@@ -106,8 +150,8 @@ var Builtins = []struct {
 			},
 		},
 	}, {
-		"push",
-		&Builtin{
+		Name: "push",
+		Builtin: &Builtin{
 			Fn: func(args ...Object) Object {
 				if len(args) != 2 {
 					return newError("wrong number of arguments. got=%d, want=2",
