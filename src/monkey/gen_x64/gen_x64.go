@@ -70,14 +70,15 @@ func (g *Gen) Assembly() *bytes.Buffer {
 
 	// write header
 	fmt.Fprintln(b, ".intel_syntax noprefix\n")
-	fmt.Fprintln(b, ".text")
 
 	// write Global binding
 	if g.Global.Len() > 0 {
-		fmt.Fprintf(b, "	.text\n	.section	.rodata")
+		fmt.Fprintf(b, ".text\n.section	.rodata\n")
 		fmt.Fprintf(b, g.Global.String())
 		fmt.Fprintf(b, "\n")
 	}
+
+	fmt.Fprintln(b, ".text")
 
 	// write function
 	for i := 0; i <= g.fcnt; i++ {
@@ -167,7 +168,7 @@ func (g *Gen) Genx64() error {
 				fmt.Fprintf(cf.Assembly, "	push %d\n", i)
 			case *object.String:
 				g.addString(obj.Value, int(constIndex))
-				fmt.Fprintf(cf.Assembly, "	push STRGBL%d\n", constIndex)
+				fmt.Fprintf(cf.Assembly, "	push .STRGBL%d[rip]\n", constIndex)
 
 			default:
 
@@ -349,7 +350,7 @@ func (g *Gen) writeFunction(f *object.CompiledFunction, constIndex, paramNum int
 }
 
 func (g *Gen) addString(s string, index int) {
-	fmt.Fprintf(g.Global, ".STRGBL%d\n", index)
+	fmt.Fprintf(g.Global, ".STRGBL%d:\n", index)
 	fmt.Fprintf(g.Global, `	.string "%s"`, s)
 	fmt.Fprintf(g.Global, "\n")
 

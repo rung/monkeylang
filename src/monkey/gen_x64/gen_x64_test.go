@@ -2,12 +2,12 @@ package gen_x64
 
 import (
 	"fmt"
-	"monkey/ast"
 	"monkey/compiler"
 	"monkey/lexer"
 	"monkey/parser"
 	"os"
 	"os/exec"
+	"strings"
 	"syscall"
 	"testing"
 )
@@ -181,23 +181,7 @@ func TestGenerator(t *testing.T) {
 
 	for _, tt := range tests {
 		// parse
-		program := parse(tt.input)
-
-		// compile(to bytecode)
-		comp := compiler.New()
-		err := comp.Compile(program)
-		if err != nil {
-			t.Fatalf("compiler error: %s", err)
-		}
-
-		// compile(x86 code generation)
-		g := New(comp.Bytecode())
-
-		err = g.Genx64()
-
-		if err != nil {
-			t.Errorf("code generation error: %s", err)
-		}
+		g := compile(tt.input, t)
 
 		// write tmp file
 		os.Remove("/tmp/monkeytmp.s")
@@ -255,28 +239,60 @@ func TestGenerator(t *testing.T) {
 
 type stringTestCase struct {
 	input    string
-	expected int
+	expected string
 }
 
-//func TestString(t *testing.T) {
-//	tests := []stringTestCase{
-//		{
-//			input: `puts("hello world!")`,
-//			expected: `hello world!`
-//		},
-//	}
-//
-//}
+func TestGlobalString(t *testing.T) {
+	tests := []stringTestCase{
+		{
+			input:    `"hello world!"`,
+			expected: `hello world!`,
+		},
+	}
 
-func parse(input string) *ast.Program {
+	for _, tt := range tests {
+		g := compile(tt.input, t)
+
+		// write tmp file
+		os.Remove("/tmp/monkeytmp.s")
+		f, err := os.OpenFile("/tmp/monkeytmp.s", os.O_RDWR|os.O_CREATE, 0644)
+		if err != nil {
+			t.Errorf(err.Error())
+		}
+		f.Write(g.Assembly().Bytes())
+		f.Close()
+
+		// change Assembly to machine code and link.
+		cmd := exec.Command("/usr/bin/gcc", "/tmp/monkeytmp.s", "-o", "/tmp/monkeytmp")
+		err = cmd.Run()
+		if err != nil {
+			fmt.Println(g.currentFrame().instraction)
+			fmt.Println(g.Assembly().String())
+			t.Errorf("gcc error")
+		}
+
+		out, err := exec.Command("objdump", "-s", "-j", ".rodata", "/tmp/monkeytmp").CombinedOutput()
+
+		if err != nil {
+			t.Errorf("objdump error")
+		}
+
+		if !strings.Contains(string(out), tt.expected) {
+			t.Errorf(".rodata doesn't have expected string, got=%s, expected=%s", string(out), tt.expected)
+		}
+
+		// delete gabages
+		os.Remove("/tmp/mokeytmp")
+
+	}
+
+}
+
+func compile(input string, t *testing.T) *Gen {
+	// parse
 	l := lexer.New(input)
 	p := parser.New(l)
-	return p.ParseProgram()
-}
-
-func TestAddString(t *testing.T) {
-	// parse
-	program := parse(`puts("hello world")`)
+	program := p.ParseProgram()
 
 	// compile(to bytecode)
 	comp := compiler.New()
@@ -287,13 +303,35 @@ func TestAddString(t *testing.T) {
 
 	// compile(x86 code generation)
 	g := New(comp.Bytecode())
-	g.addString("hello world", 1)
 
-	expected := `.STRGBL1
-	.string "hello world"
+	err = g.Genx64()
+
+	if err != nil {
+		t.Errorf("code generation error: %s", err)
+	}
+
+	return g
+}
+
+func TestAddString(t *testing.T) {
+	input := `
+"hello world";
+"foobar";
 `
 
-	if g.Global.String() != expected {
+	// parse
+	g := compile(input, t)
+	g.addString("hello world", 0)
+	g.addString("foobar", 2)
+
+	expected := `.STRGBL0:
+		.string "hello world"
+
+.STRGBL2:
+			.string "foobar"
+`
+
+	if strings.Contains(g.Global.String(), expected) {
 		t.Errorf("add string error: \ngot=%s, \nexpected=%s", g.Global.String(), expected)
 	}
 
