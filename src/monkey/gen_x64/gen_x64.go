@@ -174,7 +174,8 @@ func (g *Gen) Genx64() error {
 				fmt.Fprintf(cf.Assembly, "	push %d\n", i)
 			case *object.String:
 				g.addString(obj.Value, int(constIndex))
-				fmt.Fprintf(cf.Assembly, "	push .STRGBL%d[rip]\n", constIndex)
+				fmt.Fprintf(cf.Assembly, "	lea rax, .STRGBL%d[rip]\n", constIndex)
+				fmt.Fprintln(cf.Assembly, "	push rax")
 
 			default:
 

@@ -54,7 +54,7 @@ puts:
 	sub rcx, 1
 
 	xor rax, rax
-	lea rdx, [rbp+16]
+	mov rdx, [rbp+16]
 	mov bl, [rdx]
 	cmp bl, 0
 	je .L1
@@ -71,8 +71,7 @@ puts:
 	# write(1, "string", strlen) // printf
 	mov rax, 1
 	mov rdi, 1
-	mov rsi, rbp
-	add rsi, 16
+	mov rsi, [rbp+16]
 	syscall
 	push rax
 
