@@ -288,11 +288,11 @@ func TestGlobalString(t *testing.T) {
 
 }
 
-func TestString(t *testing.T) {
+func TestStringOutput(t *testing.T) {
 	tests := []stringTestCase{
 		{
-			input:    `"hello world!"`,
-			expected: `hello world!`,
+			input:    `puts("Hello World!\n"); return 0;`,
+			expected: `Hello World!`,
 		},
 	}
 
@@ -317,14 +317,14 @@ func TestString(t *testing.T) {
 			t.Errorf("gcc error")
 		}
 
-		out, err := exec.Command("objdump", "-s", "-j", ".rodata", "/tmp/monkeytmp").CombinedOutput()
+		out, err := exec.Command("/tmp/monkeytmp").CombinedOutput()
 
 		if err != nil {
-			t.Errorf("objdump error")
+			t.Errorf("execution error: %s", err)
 		}
 
 		if !strings.Contains(string(out), tt.expected) {
-			t.Errorf(".rodata doesn't have expected string, got=%s, expected=%s", string(out), tt.expected)
+			t.Errorf("Stdout is different to  expected string, got=%s, expected=%s", string(out), tt.expected)
 		}
 
 		// delete gabages
