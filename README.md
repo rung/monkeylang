@@ -121,6 +121,23 @@ $ echo $?
 $ 
 ```
 
+#### support
+- type: integer and string
+  - let a = 1;
+  - puts("Hello world!");
+- local/global binding
+  - let a = 1;
+- calculate
+  - 1 + 1 / 3 * 5 - 1
+- function with arguments(definiction, call)
+  - let f = fn(a, b, c){return a + b + c + 4;} return f(1, 2, 3);
+- builtin function
+  - puts("hello");
+- if-then-else statement
+ - if(1 > a){ return 1;}
+
+#### unsupport
+
 ### Reference
  - "Writing An Interpreter In Go".
  - "Writing A Compiler In Go".
