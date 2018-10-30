@@ -244,6 +244,11 @@ $
   - if(1 > a){ return 1;}
 
 #### unsupport
+- String concatenation
+- Array type
+- Hash type
+- Closure
+and so on...
 
 ### Reference
  - "Writing An Interpreter In Go".
