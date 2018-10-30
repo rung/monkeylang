@@ -9,7 +9,7 @@
 
 #### example
 ```bash
-$ cat sample/function.mk 
+$ cat sample/sample.mk
 let a = 1;
 
 let fnA = fn() {
@@ -22,7 +22,16 @@ let fnB = fn() {
 	return c;
 }
 
-return a + fnA() + fnB()
+if (fnA() + fnB() + a != 10){
+	let d = "dummy\n";
+	puts(d);
+} else {
+	let d = "Hello World!\n";
+	puts(d);
+}
+
+return fnA();
+
 ```
 
 <details>
@@ -30,15 +39,22 @@ return a + fnA() + fnB()
 <pre>
 <code>
 
-$ ./x64_gen sample/function.mk
+$ ./x64_gen sample/sample.mk
 .intel_syntax noprefix
+
+.text
+.section	.rodata
+.STRGBL6:
+	.string "dummy\n"
+.STRGBL7:
+	.string "Hello World!\n"
 
 .text
 .global main
 main:
 	push rbp
 	mov rbp, rsp
-	sub rsp, 24
+	sub rsp, 40
 	push 1
 	pop rax
 	mov [rbp-8] ,rax
@@ -50,25 +66,74 @@ main:
 	push rax
 	pop rax
 	mov [rbp-24] ,rax
-	mov rax, [rbp-8]
-	push rax
 	mov rax, [rbp-16]
 	push rax
-	pop rax
+	mov rax, [rsp+0]
 	call rax
-	push rax
-	pop rbx
-	pop rax
-	add rax, rbx
+	add rsp, 8
 	push rax
 	mov rax, [rbp-24]
 	push rax
-	pop rax
+	mov rax, [rsp+0]
 	call rax
+	add rsp, 8
 	push rax
 	pop rbx
 	pop rax
 	add rax, rbx
+	push rax
+	mov rax, [rbp-8]
+	push rax
+	pop rbx
+	pop rax
+	add rax, rbx
+	push rax
+	push 10
+	pop rax
+	pop rbx
+	cmp rax, rbx
+	jne .LABEL0
+	push 1
+	jmp .LABEL1
+.LABEL0:
+	push 0
+.LABEL1:
+	pop rax
+	cmp rax, 0
+	jne .LABEL2
+	lea rax, .STRGBL6[rip]
+	push rax
+	pop rax
+	mov [rbp-32] ,rax
+	lea rax, puts[rip]
+	push rax
+	mov rax, [rbp-32]
+	push rax
+	mov rax, [rsp+8]
+	call rax
+	add rsp, 16
+	push rax
+	jmp .LABEL3
+.LABEL2:
+	lea rax, .STRGBL7[rip]
+	push rax
+	pop rax
+	mov [rbp-40] ,rax
+	lea rax, puts[rip]
+	push rax
+	mov rax, [rbp-40]
+	push rax
+	mov rax, [rsp+8]
+	call rax
+	add rsp, 16
+	push rax
+.LABEL3:
+	pop rax
+	mov rax, [rbp-16]
+	push rax
+	mov rax, [rsp+0]
+	call rax
+	add rsp, 8
 	push rax
 	pop rax
 	mov rsp, rbp
@@ -105,8 +170,45 @@ function2:
 	pop rbp
 	ret
 
+.global puts
+puts:
+	#header
+	push rbp
+	mov rbp, rsp
 
-$ 
+	#strlen start
+	xor rcx, rcx
+	sub rcx, 1
+
+	xor rax, rax
+	mov rdx, [rbp+16]
+	mov bl, [rdx]
+	cmp bl, 0
+	je .L1
+.L0:
+	add rdx, 1
+	mov bl, [rdx]
+	cmp bl, 0
+	loopne .L0
+.L1:
+	not rcx
+	mov rdx, rcx
+	# strlen end
+
+	# write(1, "string", strlen) // printf
+	mov rax, 1
+	mov rdi, 1
+	mov rsi, [rbp+16]
+	syscall
+	push rax
+
+	#footar
+	mov rsp, rbp
+	pop rbp
+	ret
+
+
+$
 
 </code>
 </pre>
@@ -115,10 +217,12 @@ $
 
 
 ```bash
-$ ./x64_gen sample/function.mk > /tmp/t.s; gcc /tmp/t.s; ./a.out
+$ ./x64_gen sample/sample.mk > /tmp/t.s; gcc /tmp/t.s -o /tmp/t; /tmp/t
+Hello World!
 $ echo $?
-10
-$ 
+3
+$
+
 ```
 
 #### support
@@ -134,7 +238,7 @@ $
 - builtin function
   - puts("hello");
 - if-then-else statement
- - if(1 > a){ return 1;}
+  - if(1 > a){ return 1;}
 
 #### unsupport
 
