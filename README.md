@@ -196,20 +196,20 @@ puts:
 	not rcx
 	mov rdx, rcx
 	# strlen end
-
+ 
 	# write(1, "string", strlen) // printf
 	mov rax, 1
 	mov rdi, 1
 	mov rsi, [rbp+16]
 	syscall
 	push rax
-
+ 
 	#footar
 	mov rsp, rbp
 	pop rbp
 	ret
-
-
+ 
+ 
 $
 
 </code>
