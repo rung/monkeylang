@@ -7,7 +7,8 @@
   - treat intel CPU as stack machine (This is same approach to Monkey VM compiler of the compiler book.)
   - now, it doesn't almost use registers. 
 
-#### example
+#### Sample
+##### Monkey code
 ```bash
 $ cat sample/sample.mk
 let a = 1;
@@ -34,8 +35,9 @@ return fnA();
 
 ```
 
+##### output x64 assembly
 <details>
-<summary>x64 assembly code</summary>
+<summary>open</summary>
 <pre>
 <code>
 
@@ -215,6 +217,7 @@ $
 </details>
 
 
+##### Assemble(by gcc) and Execution
 
 ```bash
 $ ./x64_gen sample/sample.mk > /tmp/t.s; gcc /tmp/t.s -o /tmp/t; /tmp/t
