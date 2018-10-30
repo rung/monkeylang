@@ -288,6 +288,52 @@ func TestGlobalString(t *testing.T) {
 
 }
 
+func TestString(t *testing.T) {
+	tests := []stringTestCase{
+		{
+			input:    `"hello world!"`,
+			expected: `hello world!`,
+		},
+	}
+
+	for _, tt := range tests {
+		g := compile(tt.input, t)
+
+		// write tmp file
+		os.Remove("/tmp/monkeytmp.s")
+		f, err := os.OpenFile("/tmp/monkeytmp.s", os.O_RDWR|os.O_CREATE, 0644)
+		if err != nil {
+			t.Errorf(err.Error())
+		}
+		f.Write(g.Assembly().Bytes())
+		f.Close()
+
+		// change Assembly to machine code and link.
+		cmd := exec.Command("/usr/bin/gcc", "/tmp/monkeytmp.s", "-o", "/tmp/monkeytmp")
+		err = cmd.Run()
+		if err != nil {
+			fmt.Println(g.currentFrame().instraction)
+			fmt.Println(g.Assembly().String())
+			t.Errorf("gcc error")
+		}
+
+		out, err := exec.Command("objdump", "-s", "-j", ".rodata", "/tmp/monkeytmp").CombinedOutput()
+
+		if err != nil {
+			t.Errorf("objdump error")
+		}
+
+		if !strings.Contains(string(out), tt.expected) {
+			t.Errorf(".rodata doesn't have expected string, got=%s, expected=%s", string(out), tt.expected)
+		}
+
+		// delete gabages
+		os.Remove("/tmp/mokeytmp")
+
+	}
+
+}
+
 func compile(input string, t *testing.T) *Gen {
 	// parse
 	l := lexer.New(input)

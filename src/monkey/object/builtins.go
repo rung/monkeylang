@@ -43,11 +43,6 @@ puts:
 	#header
 	push rbp
 	mov rbp, rsp
-
-	#save register
-	push rdi
-	push rsi
-	push rdx
 	
 	#strlen start
 	xor rcx, rcx
