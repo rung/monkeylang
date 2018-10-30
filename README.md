@@ -1,6 +1,6 @@
 # Monkey language
 - This is Monkey language interpreter and compiler from Thorsten Ball's book.
-  - and original x64 compiler from Monkey bytecode to x64 assembly.
+  - and my original x64 compiler from Monkey bytecode to x64 assembly.
 
 ### Assembly Compiler(WIP) 
 - I am writing compiler from monkey to x64 assembly now.
@@ -248,7 +248,7 @@ $
 - Array type
 - Hash type
 - Closure
-and so on...
+  - and so on...
 
 ### Reference
  - "Writing An Interpreter In Go".
