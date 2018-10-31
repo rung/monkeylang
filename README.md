@@ -3,7 +3,8 @@
   - and my original x64 compiler from Monkey bytecode to x64 assembly.
 
 ### Assembly Compiler(WIP) 
-- I am writing compiler from monkey to x64 assembly now.
+- The compiler book by Thorsten Ball is to make original bytecode compiler and original vm(like mini JVM).
+- I wanted to assemble Monkey language to machine code, so I am writing compiler from monkey to x64 assembly now.
   - treat intel CPU as stack machine (This is same approach to Monkey VM compiler of the compiler book.)
   - now, it doesn't almost use registers. 
 
