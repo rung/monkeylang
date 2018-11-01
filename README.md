@@ -243,10 +243,11 @@ $
   - puts("hello");
 - if-then-else statement
   - if(1 > a){ return 1;}
+- Array type
+  - let a = [1, 2, 3]; return a[2];
 
 #### unsupport
 - String concatenation
-- Array type
 - Hash type
 - Closure
   - and so on...
