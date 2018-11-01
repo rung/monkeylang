@@ -336,9 +336,9 @@ func (g *Gen) Genx64() error {
 			// Stack Layout
 			//  [pointer(&array size)]
 			//  [array size]
-			//  [data0]
-			//  [data1]
 			//  [data2]
+			//  [data1]
+			//  [data0]
 			fmt.Fprintf(cf.Assembly, "	push %d\n", size)
 			fmt.Fprintln(cf.Assembly, "	push rsp")
 
@@ -347,12 +347,22 @@ func (g *Gen) Genx64() error {
 			//  [index]
 			//  [array pointer]
 			fmt.Fprintln(cf.Assembly, "	pop rax") // index
+			fmt.Fprintln(cf.Assembly, "	pop rbx") // &array size
+
+			//// confirm index out of range.
+			//fmt.Fprintln(cf.Assembly, "	cmp rax, [rbx]")
+			//fmt.Fprintf(cf.Assembly, "	jl .LABEL%d\n", g.labelcnt)
+			//fmt.Fprintln(cf.Assembly, "	mov rax, 0")
+			//fmt.Fprintln(cf.Assembly, "	ret")
+			//
+			//fmt.Fprintf(cf.Assembly, ".LABEL%d:\n", g.labelcnt)
 			fmt.Fprintln(cf.Assembly, "	imul rax, 8")
-			fmt.Fprintln(cf.Assembly, "	pop rbx") // &array
-			// Todo: shoud have Out-Of-Index error handling, but not yet.
-			fmt.Fprintln(cf.Assembly, "	add rax, 8")
-			fmt.Fprintln(cf.Assembly, "	add rax, rbx")
-			fmt.Fprintln(cf.Assembly, "	push [rax]")
+			fmt.Fprintln(cf.Assembly, "	mov rdx, [rbx]")
+			fmt.Fprintln(cf.Assembly, "	imul rdx, 8")
+			fmt.Fprintln(cf.Assembly, "	add rbx, rdx") // &arraysize + arraysize
+			fmt.Fprintln(cf.Assembly, "	sub rbx, rax") // - index
+			fmt.Fprintln(cf.Assembly, "	push [rbx]")
+			g.labelcnt++
 
 		default:
 			return fmt.Errorf("non-supported opcode")
