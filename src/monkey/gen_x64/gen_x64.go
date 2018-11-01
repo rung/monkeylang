@@ -8,8 +8,6 @@ import (
 	"monkey/object"
 )
 
-var reserveLabel = make(map[int]int)
-
 type Gen struct {
 	constants []object.Object
 	Global    *bytes.Buffer
@@ -23,10 +21,11 @@ type Gen struct {
 }
 
 type Frame struct {
-	instraction code.Instructions
-	Assembly    *bytes.Buffer
-	symbolnum   int
-	paramNum    int
+	instraction  code.Instructions
+	Assembly     *bytes.Buffer
+	symbolnum    int
+	paramNum     int
+	reserveLabel map[int]int
 }
 
 func (g *Gen) currentFrame() *Frame {
@@ -35,9 +34,10 @@ func (g *Gen) currentFrame() *Frame {
 
 func (g *Gen) pushFrame(obj *object.CompiledFunction, constIndex, paramNum int) {
 	f := &Frame{
-		instraction: obj.Instructions,
-		symbolnum:   obj.NumLocals,
-		paramNum:    paramNum,
+		instraction:  obj.Instructions,
+		symbolnum:    obj.NumLocals,
+		paramNum:     paramNum,
+		reserveLabel: map[int]int{},
 	}
 	g.fcnt++
 	g.fIndex[constIndex] = g.fcnt
@@ -51,9 +51,10 @@ func (g *Gen) popFrame() *Frame {
 
 func New(b *compiler.Bytecode) *Gen {
 	f := &Frame{
-		instraction: b.Instructions,
-		symbolnum:   b.SymbolNum,
-		paramNum:    0,
+		instraction:  b.Instructions,
+		symbolnum:    b.SymbolNum,
+		paramNum:     0,
+		reserveLabel: map[int]int{},
 	}
 
 	g := &Gen{
@@ -157,7 +158,7 @@ func (g *Gen) Genx64() error {
 	for ip := 0; ip < len(cf.instraction); ip++ {
 		op := code.Opcode(cf.instraction[ip])
 
-		l, ok := reserveLabel[ip]
+		l, ok := cf.reserveLabel[ip]
 		if ok {
 			fmt.Fprintf(cf.Assembly, ".LABEL%d:\n", l)
 		}
@@ -281,7 +282,7 @@ func (g *Gen) Genx64() error {
 			fmt.Fprintf(cf.Assembly, "	jmp .LABEL%d\n", g.labelcnt)
 			bytecodeNo := int(code.ReadUint16(cf.instraction[ip+1:]))
 
-			pushLabel(g.labelcnt, bytecodeNo)
+			pushLabel(cf, g.labelcnt, bytecodeNo)
 
 			g.labelcnt++
 			ip += 2
@@ -292,7 +293,7 @@ func (g *Gen) Genx64() error {
 			fmt.Fprintf(cf.Assembly, "	jne .LABEL%d\n", g.labelcnt)
 			bytecodeNo := int(code.ReadUint16(cf.instraction[ip+1:]))
 
-			pushLabel(g.labelcnt, bytecodeNo)
+			pushLabel(cf, g.labelcnt, bytecodeNo)
 
 			g.labelcnt++
 			ip += 2
@@ -338,8 +339,8 @@ func (g *Gen) Genx64() error {
 }
 
 // 指定したbytecodeのline noの箇所に、ラベルを吐く
-func pushLabel(labelcnt, b_line int) {
-	reserveLabel[b_line] = labelcnt
+func pushLabel(cf *Frame, labelcnt, b_line int) {
+	cf.reserveLabel[b_line] = labelcnt
 	return
 }
 
