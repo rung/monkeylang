@@ -89,7 +89,7 @@ func (g *Gen) Assembly() *bytes.Buffer {
 	}
 
 	// write builtin
-	for i, _ := range g.builtin {
+	for i := range g.builtin {
 		fmt.Fprintln(b, object.Builtins[i].Assembly)
 	}
 
@@ -308,7 +308,7 @@ func (g *Gen) Genx64() error {
 
 			err := g.pushClosure(int(constIndex), int(numFree))
 			if err != nil {
-				return nil
+				return err
 			}
 			fmt.Fprintf(cf.Assembly, "	lea rax, function%d[rip]\n", g.fcnt)
 			fmt.Fprintln(cf.Assembly, "	push rax")
@@ -349,13 +349,14 @@ func (g *Gen) Genx64() error {
 			fmt.Fprintln(cf.Assembly, "	pop rax") // index
 			fmt.Fprintln(cf.Assembly, "	pop rbx") // &array size
 
-			//// confirm index out of range.
-			//fmt.Fprintln(cf.Assembly, "	cmp rax, [rbx]")
-			//fmt.Fprintf(cf.Assembly, "	jl .LABEL%d\n", g.labelcnt)
-			//fmt.Fprintln(cf.Assembly, "	mov rax, 0")
-			//fmt.Fprintln(cf.Assembly, "	ret")
+			// confirm index out of range.
+			fmt.Fprintln(cf.Assembly, "	cmp rax, [rbx]")
+			fmt.Fprintf(cf.Assembly, "	jl .LABEL%d\n", g.labelcnt)
+			fmt.Fprintln(cf.Assembly, "	mov rax, 60")
+			fmt.Fprintln(cf.Assembly, "	mov rdi, 1")
+			fmt.Fprintln(cf.Assembly, "	syscall")
 			//
-			//fmt.Fprintf(cf.Assembly, ".LABEL%d:\n", g.labelcnt)
+			fmt.Fprintf(cf.Assembly, ".LABEL%d:\n", g.labelcnt)
 			fmt.Fprintln(cf.Assembly, "	imul rax, 8")
 			fmt.Fprintln(cf.Assembly, "	mov rdx, [rbx]")
 			fmt.Fprintln(cf.Assembly, "	imul rdx, 8")
