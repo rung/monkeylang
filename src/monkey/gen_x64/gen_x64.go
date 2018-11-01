@@ -330,6 +330,30 @@ func (g *Gen) Genx64() error {
 			fmt.Fprintf(cf.Assembly, "	add rsp, %d\n", 8+paramNum*8) // pop paramNum * 8
 			fmt.Fprintln(cf.Assembly, "	push rax")
 
+		case code.OpArray:
+			size := int(code.ReadUint16(cf.instraction[ip+1:]))
+			ip += 2
+			// Stack Layout
+			//  [pointer(&array size)]
+			//  [array size]
+			//  [data0]
+			//  [data1]
+			//  [data2]
+			fmt.Fprintf(cf.Assembly, "	push %d\n", size)
+			fmt.Fprintln(cf.Assembly, "	push rsp")
+
+		case code.OpIndex:
+			// Stack Layout
+			//  [index]
+			//  [array pointer]
+			fmt.Fprintln(cf.Assembly, "	pop rax") // index
+			fmt.Fprintln(cf.Assembly, "	imul rax, 8")
+			fmt.Fprintln(cf.Assembly, "	pop rbx") // &array
+			// Todo: shoud have Out-Of-Index error handling, but not yet.
+			fmt.Fprintln(cf.Assembly, "	add rax, 8")
+			fmt.Fprintln(cf.Assembly, "	add rax, rbx")
+			fmt.Fprintln(cf.Assembly, "	push [rax]")
+
 		default:
 			return fmt.Errorf("non-supported opcode")
 		}

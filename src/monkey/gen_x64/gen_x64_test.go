@@ -177,6 +177,10 @@ func TestGenerator(t *testing.T) {
 					`,
 			expected: 25,
 		},
+		{
+			input:    `let a = [0, 25, 50]; return a[1]`,
+			expected: 25,
+		},
 	}
 
 	for _, tt := range tests {
@@ -293,6 +297,10 @@ func TestStringOutput(t *testing.T) {
 		{
 			input:    `puts("Hello World!\n"); return 0;`,
 			expected: `Hello World!`,
+		},
+		{
+			input:    `if(1 == 1){puts("Hello World\n");} return 0;`,
+			expected: `Hello World`,
 		},
 	}
 
