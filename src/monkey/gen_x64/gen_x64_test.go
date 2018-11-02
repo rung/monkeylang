@@ -181,6 +181,10 @@ func TestGenerator(t *testing.T) {
 			input:    `let a = [0, 25, 50]; return a[1]`,
 			expected: 25,
 		},
+		{
+			input:    `let a = [0, 1, 2]; return len(a);`,
+			expected: 3,
+		},
 	}
 
 	for _, tt := range tests {

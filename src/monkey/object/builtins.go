@@ -27,6 +27,20 @@ var Builtins = []struct {
 				}
 			},
 		},
+		Assembly: `.global len
+len:
+	#header
+	push rbp
+	mov rbp, rsp
+
+	# len
+	mov rax, [rbp+16]
+	mov rax, [rax]
+
+	#footar
+	mov rsp, rbp
+	pop rbp
+	ret`,
 	},
 	{
 		Name: "puts",
