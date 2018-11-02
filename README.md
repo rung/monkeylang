@@ -28,8 +28,8 @@ if (fnA() + fnB() + a != 10){
 	let d = "dummy\n";
 	puts(d);
 } else {
-	let d = "Hello World!\n";
-	puts(d);
+	let d = ["foo", "bar", "Hello World!\n"];
+	puts(d[2]);
 }
 
 return fnA();
@@ -50,6 +50,10 @@ $ ./x64_gen sample/sample.mk
 .STRGBL6:
 	.string "dummy\n"
 .STRGBL7:
+	.string "foo"
+.STRGBL8:
+	.string "bar"
+.STRGBL9:
 	.string "Hello World!\n"
 
 .text
@@ -120,12 +124,33 @@ main:
 .LABEL2:
 	lea rax, .STRGBL7[rip]
 	push rax
+	lea rax, .STRGBL8[rip]
+	push rax
+	lea rax, .STRGBL9[rip]
+	push rax
+	push 3
+	push rsp
 	pop rax
 	mov [rbp-40] ,rax
 	lea rax, puts[rip]
 	push rax
 	mov rax, [rbp-40]
 	push rax
+	push 2
+	pop rax
+	pop rbx
+	cmp rax, [rbx]
+	jl .LABEL4
+	mov rax, 60
+	mov rdi, 1
+	syscall
+.LABEL4:
+	imul rax, 8
+	mov rdx, [rbx]
+	imul rdx, 8
+	add rbx, rdx
+	sub rbx, rax
+	push [rbx]
 	mov rax, [rsp+8]
 	call rax
 	add rsp, 16
@@ -197,19 +222,18 @@ puts:
 	not rcx
 	mov rdx, rcx
 	# strlen end
- 
+
 	# write(1, "string", strlen) // printf
 	mov rax, 1
 	mov rdi, 1
 	mov rsi, [rbp+16]
 	syscall
 	push rax
- 
+
 	#footar
 	mov rsp, rbp
 	pop rbp
 	ret
- 
  
 $
 
